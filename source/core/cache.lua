@@ -1,0 +1,59 @@
+-- simple cache module based on a ring buffer
+-- most basic approach, double entries are not collated
+-- weak references are reused until collected
+-- copyright 2014 Samuel Baird MIT Licence
+
+local class = require('core.class')
+
+return class(function (cache)
+	local super = cache.new
+	
+	function cache.new(retain_size)
+		local self = super()
+		self.retain_size = tonumber(retain_size) or 0
+		-- weak cache of all values
+		self.weak = setmetatable({}, {
+			__mode = 'kv'
+		})
+		-- hard cache, simple ring buffer for each access
+		-- this means double access is represented twice which might be good or bad
+		self.ring_buffer = {}
+		self.ring_buffer_index = 0
+		return self
+	end
+	
+	function cache:push(key, value)
+		self.weak[key] = value
+		self:retain(key, value)
+		return value
+	end
+	
+	function cache:clear(key)
+		self.weak[key] = nil
+	end
+	
+	cache.set = cache.push
+	
+	function cache:get(key)
+		local value = self.weak[key]
+		if value then
+			self:retain(key, value)
+		end
+		return value
+	end
+	
+	function cache:peek(key)
+		return self.weak[key]
+	end
+	
+	function cache:retain(key, value)
+		if self.retain_size > 0 then
+			self.ring_buffer_index = self.ring_buffer_index + 1
+			if self.ring_buffer_index > self.retain_size then
+				self.ring_buffer_index = 1
+			end
+			self.ring_buffer[self.ring_buffer_index] = { key, value }
+		end
+	end
+	
+end)

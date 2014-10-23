@@ -1,0 +1,44 @@
+-- fifo queue
+-- based on a link list of pairs
+-- copyright 2014 Samuel Baird MIT Licence
+
+local class = require("core.class")
+
+local pairs, ipairs = pairs, ipairs
+
+return class(function (queue)
+	local super = queue.new
+	
+	function queue.new()
+		local self = super()
+		self.head = nil
+		self.tail = nil
+		return self
+	end
+	
+	-- push an item to the end of the queue
+	function queue:push(item)
+		local entry = { item, nil }
+		if self.tail then
+			self.tail[2] = entry
+		else
+			self.head = entry
+		end
+		self.tail = entry
+	end
+	
+	-- pop the oldest item from the front of the queue (or nil)
+	function queue:pop(item)
+		if self.head then
+			local next = self.head[1]
+			self.head = self.head[2]
+			if self.head == nil then
+				self.tail = nil
+			end
+			return next
+		end
+		return nil
+	end
+
+	
+end)
