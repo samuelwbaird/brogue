@@ -17,6 +17,7 @@ package.path = '../source/?.lua;' .. package.path
 -- blockers may stay still or move to an unoccupied adjacent square
 -- if at the end of any move a runner has reached the other end of the board runners win
 -- if at the end of any move a runner is adjacent to a blocker then blockers wins
+-- if a runner cannot move then blockers win
 
 
 -- load the modules we need
@@ -60,137 +61,64 @@ else
 		})
 		print('created field ' .. field.id)
 	
-		-- now create a grid of positions and populate the adjacent position and field
-		local rows = array()
-		for r = 1, 8 do
-			rows[r] = array()
-			for c = 1, 8 do
-				rows[r][c] = game_model.position:create({
-					-- set the reference back to the field (using the defined relationship)
-					field = field,
-					row = r,
-					column = c,
-					name = '[' .. c .. ':' .. r .. ']'
-				})
-			end
-		end
-	
+		field:create_all_positions()
+
 		-- we can access the collection, with parameter of true to fetch the entire collection into an array
 		print('field has ' .. #field:positions(true) .. ' positions')
-		print('assign adjacent positions')
-	
-		-- we can set some arbitrary value on the objects, even complex things
-		-- like arrays of references to other objects, without defining them first
-		for r = 1, 7 do
-			for c = 1, 7 do
-				-- get the list of valid adjacent positions
-				local adjacent = array()
-				for r_offset = -1, 1 do
-					if r + r_offset >= 1 and r + r_offset <= #rows then
-						for c_offset = -1, 1 do
-							if c + c_offset >= 1 and c + c_offset <= #rows[r] then
-								if rows[r + r_offset][c + c_offset] ~= rows[r][c] then
-									adjacent:push(rows[r + r_offset][c + c_offset])
-								end
-							end
-						end
-					end
-				end
-				-- set an array of adjacent positions on this position
-				rows[r][c].adjacent = adjacent
-			end
-		end
-		
-		-- now we create the blockers and runners for the game
-		-- we set their reference to the field, so they will be in the field list of all runners and blockers
-		-- but not associated with specified
-		print('create blockers and runners')
-		for i = 1, 4 do
-			game_model.runner:create({
-				name = 'r' .. i,
-				field = field,
-			})
-		end
-		for i = 1, 2 do
-			game_model.blocker:create({
-				name = 'b' .. i,
-				field = field,
-			})
+
+		-- now let's query some stuff to see if our field is ok
+		print('')
+		local test_pos = game_model.position:get({ name = '[1:2]'})
+		print('test position ' .. test_pos.name)
+		for _, ap in ipairs(test_pos.adjacent) do
+			print('adjacent to ' .. ap.name)
 		end
 	end)
 end
 
--- now let's query some stuff to see if our field is ok
-print('')
-local test_pos = game_model.position:get({ name = '[1:2]'})
-print('found position ' .. test_pos.name)
-for _, ap in ipairs(test_pos.adjacent) do
-	print('adjacent to ' .. ap.name)
-end
-
 -- ok now lets play a game
 
-local function get_position(field, r, c)
-	return game_model.position:get({
-		field_id = field.id,
-		name = '[' .. c .. ':' .. r .. ']'
-	})
-end
-
-local function show_state(field)
-	print('')
-	local rows = array()
-	for r = 1, 7 do
-		rows[r] = array()
-		for c = 1, 7 do
-			rows[r][c] = '  '
-			-- find the position object
-			local pos = get_position(field, r, c)
-			if pos then
-				rows[r][c] = '. '
-				-- if there is a runner or blocker at this position then show them
-				for runner in pos:runners() do
-					rows[r][c] = runner.name
-				end
-				for blocker in pos:blockers() do
-					rows[r][c] = blocker.name
-				end
-			end
-		end
-		print(table.concat(rows[r], ' ' ))
-	end
-	-- show which turns are next
-	local t = array()
-	for _, instance in ipairs(field.turns) do
-		t:push(instance.name)
-	end
-	print(table.concat(t, ' '))
-end
-
-
 for steps = 1, 3 do
+	print('')
 	
 	-- if the game is finished then reset positions
 	if field.state == 'finished' then
 		-- reset positions and turns
 		game_model:transaction(function ()
-			-- field.state = 'game'
-			local turns = array()
-			local i = 0
-			for runner in field:runners() do
-				turns:push(runner)
-				runner.position = get_position(field, 1, 1 + (i * 2))
-				i = i + 1
-			end
-			i = 0
-			for blocker in field:blockers() do
-				turns:push(blocker)
-				blocker.position = get_position(field, 6, 2 + (i * 4))
-				i = i + 1
-			end
-			field.turns = turns
+			field:reset()
+			field.state = 'game'
 		end)
-		show_state(field)
+		print(':reset')
+		print(field:display())
+		
+		
+	elseif field.state == 'game' then
+		local next = field.turns[1]
+		local move = next:get_move()
+		print(next.name .. ' -> ' .. (move and move.name or 'no move'))
+		
+		game_model:transaction(function ()
+			-- apply the move
+			if move then
+				next.position = move
+				-- check for consequences
+			else
+				if next.class_name == 'runner' then
+					print(next.name .. ' could not move')
+					print('blockers win')
+					field.state = 'finished'
+				end
+			end
+			
+			-- update the turns
+			field:shift_turns()
+		end)
+		print(field:display())
+		
+		if field.state == 'finished' then
+			break
+		end
+		
 	end	
 		
 	-- otherwise see whose turn is next

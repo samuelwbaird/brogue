@@ -238,5 +238,9 @@ return class(function (model_class)
 			return outer
 		end)
 	end
+	
+	function model_class:define_method(name, fn)
+		self.class_instance_factory.register_constant(name, fn)
+	end
 
 end)
