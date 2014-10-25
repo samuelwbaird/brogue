@@ -25,27 +25,44 @@ return module(function (runner)
 	function runner:get_move()
 		-- find all unoccupied adjacent positions and pick one
 		local possible = array()
-		for _, pos in ipairs(self.position.adjacent) do
+		for _, pos in ipairs(self.position:adjacent_randomised()) do
 			if not pos:is_occupied() then
 				possible:push(pos)
 			end
 		end
-
-		if #possible == 0 then
-			-- cannot move, blockers will win
-			return nil
-		end
 		
-		-- first pick a random position, if it is forward then take the move
-		for i = 1, 2 do
-			local p = possible[math.random(1, #possible)]
-			if p.row > self.position.row then
-				return p
+		-- move to any position that is on row 7
+		for _, pos in ipairs(possible) do
+			if pos.row == 7 then
+				return pos
 			end
 		end
-
-		-- otherwise a random movement
-		return possible[math.random(1, #possible)]
+		
+		-- or is forward and has no blocker within 2
+		for _, pos in ipairs(possible) do
+			if pos.row > self.position.row and not pos:adjacent_blocker(2) then
+				return pos
+			end
+		end		
+		
+		-- sometimes take a risk moving forward with safety in numbers
+		--if false and math.random(1, 2) == 1 then
+			for _, pos in ipairs(possible) do
+				if pos.row > self.position.row and not pos:adjacent_blocker(1) then
+					return pos
+				end
+			end		
+		--end
+		
+		-- or has no blocker within 2
+		for _, pos in ipairs(possible) do
+			if not pos:adjacent_blocker(2) then
+				return pos
+			end
+		end
+		
+		-- otherwise don't move
+		return nil
 	end
 
 end)

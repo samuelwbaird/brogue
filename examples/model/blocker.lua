@@ -25,7 +25,7 @@ return module(function (blocker)
 	function blocker:get_move()
 		-- find all unoccupied adjacent positions and pick one
 		local possible = array()
-		for _, pos in ipairs(self.position.adjacent) do
+		for _, pos in ipairs(self.position:adjacent_randomised()) do
 			if not pos:is_occupied() then
 				possible:push(pos)
 			end
@@ -36,6 +36,20 @@ return module(function (blocker)
 			return nil
 		end
 		
+		-- could also stay here
+		possible:push(self.position)
+		
+		-- check for a likely runner to chase
+		for distance = 1, 3 do
+			for _, pos in ipairs(possible) do
+				local r = pos:adjacent_runner(distance)
+				if r then
+					return pos
+				end
+			end
+		end
+		
+		-- otherwise go random
 		return possible[math.random(1, #possible)]
 	end
 

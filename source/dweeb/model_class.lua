@@ -186,9 +186,9 @@ return class(function (model_class)
 				end,
 
 				function (instance, key, value, indexed_fields, additional_fields)
-					rawget(instance, 'indexed_fields')[id_field] = value.id
+					rawget(instance, 'indexed_fields')[id_field] = value and value.id or 0
 					-- update the database immediately
-					prepared_set_index:execute({ value.id, instance.id })
+					prepared_set_index:execute({ value and value.id or 0, instance.id })
 				end)
 				
 		else

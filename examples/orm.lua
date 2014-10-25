@@ -5,19 +5,18 @@ package.path = '../source/?.lua;' .. package.path
 --
 -- this demonstration introduces the grid and turn based game of runners and blockers
 -- the runners must reach the other end of the field, the blockers must prevent them
--- the game is modelled using the dweeb ORM and changes are persisted
+-- the game is modelled using the dweeb ORM and changes are persisted to a database
 -- each time this script is run the game continues for a few more steps
--- demonstrating the persistence of data to the db
+-- demonstrating the persistence of data
 --
 -- the rules
 -- the game runs on a 7x7 grid, runners start at one end, blockers in the other half
 -- there are 4 runners and two blockers
 -- the runners move first, one at a time, then the blockers
--- runners must move to an unoccupied adjacent square
+-- runners may stay still or move to an unoccupied adjacent square
 -- blockers may stay still or move to an unoccupied adjacent square
 -- if at the end of any move a runner has reached the other end of the board runners win
 -- if at the end of any move a runner is adjacent to a blocker then blockers wins
--- if a runner cannot move then blockers win
 
 
 -- load the modules we need
@@ -76,7 +75,7 @@ else
 	end)
 end
 
--- ok now lets play a game
+-- ok now lets play a few more steps of the game, picking up from wherever we left off
 
 for steps = 1, 3 do
 	print('')
@@ -102,11 +101,20 @@ for steps = 1, 3 do
 			if move then
 				next.position = move
 				-- check for consequences
-			else
 				if next.class_name == 'runner' then
-					print(next.name .. ' could not move')
-					print('blockers win')
-					field.state = 'finished'
+					if move.row == 7 then
+						print(next.name .. ' made it to the end')
+						print('runners win')
+						field.state = 'finished'
+					end
+				elseif next.class_name == 'blocker' then
+					for _, ar in ipairs(move:adjacent_runners()) do
+						print(next.name .. ' tagged ' .. ar.name)
+						if field:remove_runner(ar) then
+							print('blockers win')
+							field.state = 'finished'
+						end
+					end
 				end
 			end
 			
@@ -120,20 +128,7 @@ for steps = 1, 3 do
 		end
 		
 	end	
-		
-	-- otherwise see whose turn is next
-	-- run AI to pick a move
-	-- do the move 
-	-- show the board states
-	-- process and list consequences
-	-- show the board state again if different
-	
-	
 end
-
-
-
-
 
 print('')
 game_model:close()
