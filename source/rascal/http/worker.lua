@@ -1,3 +1,14 @@
+-- a fixed number of worker threads are used to service the HTTP requests
+-- workers are configured using a block of Lua code, that sets up
+-- a chain of handlers
+-- the worker module contains the text of a number of utility handlers
+-- that are available by default to the supplied code
+-- the worker also has basic support to hold a number of deferred requests
+-- that can be signalled for reply when appropriate, to treat otherwise basic HTTP
+-- requests into long polled requests
+--
+-- copyright 2014 Samuel Baird MIT Licence
+
 local coroutine = require('coroutine')
 local os = require('os')
 

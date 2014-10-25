@@ -1,3 +1,7 @@
+-- a handler that responds to a specified prefix in the URL
+-- chaining other handlers to handle the rest of the URL path
+-- copyright 2014 Samuel Baird MIT Licence
+
 -- standard lua
 local string = require('string')
 

@@ -1,3 +1,8 @@
+-- parameter level definition of an API
+-- proxy objects push method calls out to the network
+-- send and receive of these calls all revolve around an API definition
+-- copyright 2014 Samuel Baird MIT Licence
+
 -- core modules
 local class = require('core.class')
 

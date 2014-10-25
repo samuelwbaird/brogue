@@ -1,3 +1,6 @@
+-- aggregates several proxy objects with distinct method calls into a single proxy object
+-- copyright 2014 Samuel Baird MIT Licence
+
 -- core modules
 local class = require('core.class')
 local array = require('core.array')

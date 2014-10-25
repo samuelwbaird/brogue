@@ -1,3 +1,9 @@
+-- a shared logging endpoint for rascal
+-- can be configured to log to console or file
+-- logging is pushed via a 0MQ push/pull channel and serialised in this thread
+-- without blocking the client thread
+-- copyright 2014 Samuel Baird MIT Licence
+
 require('rascal.base')
 
 -- lua modules

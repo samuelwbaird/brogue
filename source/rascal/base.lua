@@ -1,10 +1,6 @@
--- dependencies
--- zeromq
--- moteus/lzmq
--- sudo luarocks install lua-cjson
--- sudo luarocks install lua-cmsgpack
--- 
-
+-- base global environment code to bootstrap a rascal thread
+-- defines detach, as a standard way to split off other threads
+-- copyright 2014 Samuel Baird MIT Licence
 
 -- lua modules
 local table = require('table')

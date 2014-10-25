@@ -1,3 +1,7 @@
+-- a handler that responds to a match (using Lua pattern matching)
+-- chaining other handlers to handle the matched pattern
+-- copyright 2014 Samuel Baird MIT Licence
+
 -- standard lua
 local string = require('string')
 

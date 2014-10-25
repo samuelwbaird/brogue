@@ -1,3 +1,9 @@
+-- represents a normal HTTP response
+-- the details of the response are built up by the various HTTP handlers
+-- before being passed back to the thread with access to the original TCP/IP connectionp
+--
+-- copyright 2014 Samuel Baird MIT Licence
+
 -- standard lua
 local table = require('table')
 

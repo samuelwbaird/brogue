@@ -10,7 +10,7 @@ Aside from communication, each thread is not pervasively asynchronous and event 
 
 Game logic and rules can execute in an in-process, single threaded fashion, with IO to the network published via side channels. SQLite works an appropriate data store to use within each micro server. The _dweeb_ module wraps access to SQLite, as well as providing a very loose ORM layer in keeping with Lua's dynamic objects.
 
-_Rascal_ provides a basic registry to publish APIs across micro server boundaries and resolve dependencies. A 0MQ raw socket HTTP server provides an access point to the outside world, along with worker threads, support for long polling and JSON.
+_Rascal_ uses a registry to publish APIs across micro server boundaries and resolve dependencies. A 0MQ raw socket HTTP server provides an access point to the outside world, along with worker threads, support for long polling and JSON.
 
 
 ## Dependencies

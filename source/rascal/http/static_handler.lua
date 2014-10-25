@@ -1,3 +1,8 @@
+-- a handler that can be used in the Lua code configuring HTTP workers
+-- to serve static files
+-- in memory caching of a set number of assets can be enabled
+-- copyright 2014 Samuel Baird MIT Licence
+
 -- standard lua
 local io = require('io')
 local string = require('string')

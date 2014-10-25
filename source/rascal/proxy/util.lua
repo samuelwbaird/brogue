@@ -1,3 +1,6 @@
+-- utility functions for proxy objects
+-- copyright 2014 Samuel Baird MIT Licence
+
 local string = require('string')
 local table = require('table')
 

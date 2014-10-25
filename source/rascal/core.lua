@@ -1,3 +1,7 @@
+-- all rascal services must include the core rascal module
+-- for convenient access to logging, the registry and the main loop
+-- copyright 2014 Samuel Baird MIT Licence
+
 require('rascal.base')
 
 -- lua modules

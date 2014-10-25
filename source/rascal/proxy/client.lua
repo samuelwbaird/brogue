@@ -1,3 +1,14 @@
+-- create a client to a published API
+-- the api_description is used to create new methods on the fly
+-- that validate parameters and marshall data using cmsgpack across the 0MQ channels
+-- marshalling is transparent to the caller of the API
+--
+-- some APIs are request/response, and the proxy will block on the response
+-- other APIs are publish/push, and the proxy return nil without blocking
+--
+-- copyright 2014 Samuel Baird MIT Licence
+
+
 local string = require('string')
 local table = require('table')
 

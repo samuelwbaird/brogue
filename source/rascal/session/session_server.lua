@@ -1,3 +1,9 @@
+-- provides session data to be shared across http workers
+-- session data can be persisted with sqlite (or in-memory)
+-- provides expiry time with automatically extending ttl
+-- works with session_cache to minimise coms
+-- copyright 2014 Samuel Baird MIT Licence
+
 local math = require('math')
 local os = require('os')
 

@@ -1,3 +1,12 @@
+-- create a server for a published API
+-- the api_description is used to create new methods on the fly
+-- that receive data from 0MQ channels, unpack and validate parameters
+-- the methods are either published on a channel and to the registry
+-- or bound to an existing 0MQ run loop
+-- marshalling is transparent to the provider of the API
+--
+-- copyright 2014 Samuel Baird MIT Licence
+
 local string = require('string')
 local table = require('table')
 

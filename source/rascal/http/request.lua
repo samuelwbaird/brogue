@@ -1,3 +1,8 @@
+-- represents an HTTP request
+-- parses itself from the raw text input
+--
+-- copyright 2014 Samuel Baird MIT Licence
+
 local os = require('os')
 
 -- external modules

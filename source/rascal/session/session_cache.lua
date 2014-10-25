@@ -1,3 +1,8 @@
+-- minimises the overhead of working with a shared session server
+-- across multiple processes by caching recently used data
+-- and recieving updates from the cache server via pub/sub
+-- copyright 2014 Samuel Baird MIT Licence
+
 -- standard lua
 local io = require('io')
 local string = require('string')

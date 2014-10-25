@@ -1,10 +1,11 @@
+-- a 0MQ device to aid synchronisation of services becoming ready
+-- signals are pushed to a known socket
+-- waiters can loop on the main loop until the signal is present
+-- copyright 2014 Samuel Baird MIT Licence
+
 require('rascal.base')
 
--- lua modules
-
--- core modules
 local class = require('core.class')
-
 
 return class(function (thread_semaphore)
 	local super = thread_semaphore.new

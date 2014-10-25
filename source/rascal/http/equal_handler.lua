@@ -1,3 +1,7 @@
+-- a handler that responds to an exact URL
+-- chaining other handlers to that URL
+-- copyright 2014 Samuel Baird MIT Licence
+
 -- standard lua
 local string = require('string')
 

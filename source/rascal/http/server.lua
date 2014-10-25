@@ -1,3 +1,12 @@
+-- uses a 0MQ router in raw mode to provide a basic HTTP server
+-- basic collection of the HTTP request is handled at this level
+-- then the request is handed off to a queue or worker threads
+-- for proper parsing and handling
+-- the TCP/IP connection is held open for the worker to send responses
+-- back, via this thread
+--
+-- copyright 2014 Samuel Baird MIT Licence
+
 -- core modules
 local module = require('core.module')
 local queue = require('core.queue')

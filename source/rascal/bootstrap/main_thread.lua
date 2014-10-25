@@ -1,13 +1,10 @@
--- dependencies
--- zeromq + moteus/lzmq
--- sudo luarocks install lua-cjson
--- sudo luarocks install lua-cmsgpack
--- 
--- core module, class, array, queue
+-- bootstraps the primary services, logging and registry
+-- with an explicit semaphore to ensure these required services are ready
+-- after this point registry:wait should be sufficient
+-- copyright 2014 Samuel Baird MIT Licence
 
 require('rascal.base')
 
--- lua modules
 local table = require('table')
 
 -- external modules
@@ -18,7 +15,6 @@ local array = require('core.array')
 local module = require('core.module')
 
 -- manage synchronisation when starting core services
-
 local thread_semaphore = require('rascal.bootstrap.thread_semaphore')
 local thread_startup_semaphore = thread_semaphore('inproc://rascal.thread.startup')
 

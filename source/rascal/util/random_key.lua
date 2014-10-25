@@ -1,3 +1,6 @@
+-- utils to create random keys
+-- copyright 2014 Samuel Baird MIT Licence
+
 local string = require('string')
 local math = require('math')
 local table = require('table')

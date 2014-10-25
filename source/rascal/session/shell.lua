@@ -1,3 +1,9 @@
+-- runs a text based lua shell with proxy functions
+-- connected to rascal services
+-- enter valid lua code for a response
+-- enter an empty line for a list of proxy commands available
+-- copyright 2014 Samuel Baird MIT Licence
+
 local math = require('math')
 local os = require('os')
 local io = require('io')

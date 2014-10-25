@@ -1,3 +1,9 @@
+-- the shared registry object for rascal
+-- apis are published by id to the registry and client code can request a proxy object to access the api
+-- dependencies are resolved through registry:wait(id) which will block until a service exists at that id
+-- defaults to a fixed in-process address but should be able to cross process boundaries
+-- copyright 2014 Samuel Baird MIT Licence
+
 require('rascal.base')
 
 -- lua classs
