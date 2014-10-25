@@ -393,8 +393,8 @@ local db = class(function (db)
 	
 	-- primary access
 	
-	-- direct no pooling
-	function db:exec(sql_string)
+	-- direct no pooling or bindings
+	function db:exec(sql_string, bindings)
 		assert(self.sqlite:exec(sql_string) == sqlite3.OK, 'error on exec ' .. sql_string .. ' ' .. (self.sqlite:error_message() or ''))
 	end
 	

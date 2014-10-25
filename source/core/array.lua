@@ -26,7 +26,7 @@ return class(function (array)
 		-- copy the contents of a table if supplied
 		if type(init) == 'table' then
 			for i, v in ipairs(init) do
-				self[i] - v
+				self[i] = v
 			end
 		end
 		
