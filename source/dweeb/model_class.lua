@@ -109,7 +109,11 @@ return class(function (model_class)
 		end
 		self.db:insert(self.class_name, insert_values):execute()
 		-- now prep the in memory instance
-		local instance = self.class_instance_factory(id, insert_values, data)
+		local instance = self.class_instance_factory(id, insert_values, nil)
+		-- set by key, value to trigger properties
+		for k, v in pairs(data) do
+			instance[k] = v
+		end
 		instance:dirty()
 		self.cache:push(id, instance)
 		return instance
