@@ -127,7 +127,11 @@ return module(function (position)
 		for blocker in self:blockers() do
 			return blocker.name
 		end
-		return '. '
+		if self.speed_square then
+			return '# '
+		else
+			return '. '
+		end
 	end
 
 end)

@@ -39,7 +39,7 @@ return module(function (field)
 		local rows = array()
 		for r = 1, 7 do
 			rows[r] = array()
-			for c = 1, 7 do
+			for c = 1, 9 do
 				rows[r][c] = self.model.position:create({
 					-- set the reference back to the self (using the defined relationship)
 					field = self,
@@ -47,13 +47,14 @@ return module(function (field)
 					column = c,
 					name = '[' .. c .. ':' .. r .. ']'
 				})
+				rows[r][c].speed_square = (r % 2 == 0 and c % 2 == 0)
 			end
 		end
 	
 		-- we can set some arbitrary value on the objects, even complex things
 		-- like arrays of references to other objects, without defining them first
 		for r = 1, 7 do
-			for c = 1, 7 do
+			for c = 1, 9 do
 				-- get the list of valid adjacent positions
 				local adjacent = array()
 				for r_offset = -1, 1 do
@@ -75,7 +76,7 @@ return module(function (field)
 		-- now we create the blockers and runners for the game
 		-- we set their reference to the field, so they will be in the field list of all runners and blockers
 		-- but not associated with specified
-		for i = 1, 3 do
+		for i = 1, 4 do
 			self.model.runner:create({
 				name = 'r' .. i,
 				field = self,
@@ -133,7 +134,7 @@ return module(function (field)
 		i = 0
 		for blocker in self:blockers() do
 			turns:push(blocker)
-			blocker.position = self:get_position(6, 2 + (i * 4))
+			blocker.position = self:get_position(6, 3 + (i * 4))
 			i = i + 1
 		end
 		self.turns = turns
@@ -143,7 +144,7 @@ return module(function (field)
 		local rows = array()
 		for r = 1, 7 do
 			rows[r] = array()
-			for c = 1, 7 do
+			for c = 1, 9 do
 				rows[r][c] = '  '
 				-- find the position object
 				local pos = self:get_position(r, c)

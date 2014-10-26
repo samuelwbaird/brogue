@@ -31,6 +31,16 @@ return module(function (runner)
 			end
 		end
 		
+		if #possible == 0 then
+			return nil
+		end
+		
+		
+		-- bias towards further positions
+		possible:sort(function (p1, p2)
+			return p1.row > p2.row
+		end)
+		
 		-- move to any position that is on row 7
 		for _, pos in ipairs(possible) do
 			if pos.row == 7 then
@@ -45,19 +55,12 @@ return module(function (runner)
 			end
 		end		
 		
-		-- sometimes take a risk moving forward with safety in numbers
-		--if false and math.random(1, 2) == 1 then
+		-- otherwise the best clear space
+		for distance = 4, 1, -1 do
 			for _, pos in ipairs(possible) do
-				if pos.row > self.position.row and not pos:adjacent_blocker(1) then
+				if not pos:adjacent_blocker(distance) then
 					return pos
 				end
-			end		
-		--end
-		
-		-- or has no blocker within 2
-		for _, pos in ipairs(possible) do
-			if not pos:adjacent_blocker(2) then
-				return pos
 			end
 		end
 		

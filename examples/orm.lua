@@ -10,18 +10,23 @@ package.path = '../source/?.lua;' .. package.path
 -- demonstrating the persistence of data
 --
 -- the rules
--- the game runs on a 7x7 grid, runners start at one end, blockers in the other half
+-- the game runs on a 9x7 grid, runners start at one end, blockers in the other half
 -- there are 4 runners and two blockers
 -- the runners move first, one at a time, then the blockers
 -- runners may stay still or move to an unoccupied adjacent square
 -- blockers may stay still or move to an unoccupied adjacent square
--- if at the end of any move a runner has reached the other end of the board runners win
--- if at the end of any move a runner is adjacent to a blocker then blockers wins
-
+-- if a runner moves to the last row then runners win
+-- if a blocker moves adjacent to any runners, those runners are tagged and are out
+-- if a blocker or a runner moves to a speed square they get an extra turn
 
 -- load the modules we need
+local math = require('math')
+local os = require('os')
+
 local array = require('core.array')
 local model = require('dweeb.model')
+
+math.randomseed(os.time())
 
 -- load a model with the assigned db file
 print('open the model at db/game.sqlite')
@@ -77,7 +82,7 @@ end
 
 -- ok now lets play a few more steps of the game, picking up from wherever we left off
 
-for steps = 1, 3 do
+for steps = 1, 100 do
 	print('')
 	
 	-- if the game is finished then reset positions
@@ -108,6 +113,7 @@ for steps = 1, 3 do
 						field.state = 'finished'
 					end
 				elseif next.class_name == 'blocker' then
+					-- tag all adjacent runners from this position
 					for _, ar in ipairs(move:adjacent_runners()) do
 						print(next.name .. ' tagged ' .. ar.name)
 						if field:remove_runner(ar) then
@@ -119,7 +125,12 @@ for steps = 1, 3 do
 			end
 			
 			-- update the turns
-			field:shift_turns()
+			if next.class_name == 'runner' and move and move.speed_square then
+				-- gets an extra turn
+				print(next.name .. ' gets an extra turn')
+			else
+				field:shift_turns()
+			end
 		end)
 		print(field:display())
 		
