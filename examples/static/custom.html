@@ -1,0 +1,18 @@
+<html>
+<head>
+	<title>Rascal Server</title>
+</head>
+<body>
+	<h1>Rascal</h1>
+	<iframe id="dynamic" src="time.html" width=300 height=100></iframe>
+
+	<script type=text/javascript>
+	// auto refresh our dynamic content
+	window.onload = function () {
+	    setInterval(function () {
+	        document.getElementById("dynamic").src = document.getElementById("dynamic").src
+	    }, 1000);
+	}
+	</script>
+</body>
+</html>

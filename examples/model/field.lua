@@ -21,6 +21,7 @@ return module(function (field)
 		model.field:define_method('get_position', field.get_position)
 		model.field:define_method('shift_turns', field.shift_turns)
 		model.field:define_method('remove_runner', field.remove_runner)
+		model.field:define_method('apply_move', field.apply_move)
 		model.field:define_method('reset', field.reset)
 		model.field:define_method('display', field.display)
 	end
@@ -121,6 +122,41 @@ return module(function (field)
 		end
 		return true
 	end
+	
+	function field:apply_move(move)
+		local out = array()
+		local next = self.turns[1]
+		if move then
+			next.position = move
+			-- check for consequences
+			if next.class_name == 'runner' then
+				if move.row == 7 then
+					out:push(next.name .. ' made it to the end')
+					out:push('runners win')
+					self.state = 'finished'
+				end
+			elseif next.class_name == 'blocker' then
+				-- tag all adjacent runners from this position
+				for _, ar in ipairs(move:adjacent_runners()) do
+					out:push(next.name .. ' tagged ' .. ar.name)
+					if self:remove_runner(ar) then
+						out:push('blockers win')
+						self.state = 'finished'
+					end
+				end
+			end
+		end
+		
+		-- update the turns
+		if next.class_name == 'runner' and move and move.speed_square then
+			-- gets an extra turn
+			out:push(next.name .. ' gets an extra turn')
+		else
+			self:shift_turns()
+		end
+		
+		return out
+	end
 
 	function field:reset()
 		-- field.state = 'game'
@@ -137,6 +173,7 @@ return module(function (field)
 			blocker.position = self:get_position(6, 3 + (i * 4))
 			i = i + 1
 		end
+		self.state = 'game'
 		self.turns = turns
 	end
 

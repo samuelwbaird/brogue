@@ -35,7 +35,6 @@ return module(function (runner)
 			return nil
 		end
 		
-		
 		-- bias towards further positions
 		possible:sort(function (p1, p2)
 			return p1.row > p2.row

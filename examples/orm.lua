@@ -82,7 +82,7 @@ end
 
 -- ok now lets play a few more steps of the game, picking up from wherever we left off
 
-for steps = 1, 100 do
+for steps = 1, 10 do
 	print('')
 	
 	-- if the game is finished then reset positions
@@ -90,7 +90,6 @@ for steps = 1, 100 do
 		-- reset positions and turns
 		game_model:transaction(function ()
 			field:reset()
-			field.state = 'game'
 		end)
 		print(':reset')
 		print(field:display())
@@ -102,35 +101,8 @@ for steps = 1, 100 do
 		print(next.name .. ' -> ' .. (move and move.name or 'no move'))
 		
 		game_model:transaction(function ()
-			-- apply the move
-			if move then
-				next.position = move
-				-- check for consequences
-				if next.class_name == 'runner' then
-					if move.row == 7 then
-						print(next.name .. ' made it to the end')
-						print('runners win')
-						field.state = 'finished'
-					end
-				elseif next.class_name == 'blocker' then
-					-- tag all adjacent runners from this position
-					for _, ar in ipairs(move:adjacent_runners()) do
-						print(next.name .. ' tagged ' .. ar.name)
-						if field:remove_runner(ar) then
-							print('blockers win')
-							field.state = 'finished'
-						end
-					end
-				end
-			end
-			
-			-- update the turns
-			if next.class_name == 'runner' and move and move.speed_square then
-				-- gets an extra turn
-				print(next.name .. ' gets an extra turn')
-			else
-				field:shift_turns()
-			end
+			local trace = field:apply_move(move)
+			print(table.concat(trace, '\n'))
 		end)
 		print(field:display())
 		
