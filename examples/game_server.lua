@@ -28,16 +28,13 @@ rascal.service('classes.game_thread', { 'db/game.sqlite' })
 rascal.http_server('tcp://*:8080', 2, [[
 	prefix('/', {
 		-- chain in our custom handler
-		chain('classes.rascal_custom_chain', {}, {
-			
-			-- if the url matches then use our custom handler to supply the response
-			equal('time.html', {
-				handler('classes.rascal_custom_handler', {})
+		chain('classes.game_session', {}, {
+			prefix('api/', {
+				handler('classes.game_api', {}),
 			}),
-			
-			-- otherwise use server static files, defaulting to custom.html
-			static('static/', 'custom.html', false),
-		})
+			handler('classes.game_view', {}),
+		}),
+		redirect('/')
 	})
 ]])
 
