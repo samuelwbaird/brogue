@@ -457,14 +457,14 @@ local db = class(function (db)
 		return self:execute('COMMIT TRANSACTION')
 	end
 	
-	function db:transaction(transaction_code)
+	function db:transaction(transaction_code, ...)
 		-- wrap a function in a transaction, abort on error
 		if self.in_transaction then
 			-- allow recursive transactions through
-			transaction_code()
+			transaction_code(...)
 		else
 			self:begin_transaction();
-			local success, r1, r2, r3, r4, r5 = pcall(transaction_code)
+			local success, r1, r2, r3, r4, r5 = pcall(transaction_code, ...)
 			if success then
 				self:commit_transaction()
 				return r1, r2, r3, r4, r5

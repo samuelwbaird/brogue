@@ -19,7 +19,7 @@ return class(function (model)
 	
 	function model.new(db_name)
 		local self = super()
-		self.db = assert(sqlite(db_name), true)
+		self.db = assert(sqlite(db_name, true))
 		self.classes = {}
 		self.in_transaction = false
 		return self
@@ -59,14 +59,14 @@ return class(function (model)
 		self.dirty_set = nil
 	end
 	
-	function model:transaction(transaction_code)
+	function model:transaction(transaction_code, ...)
 		-- wrap a function in a transaction, abort on error
 		if self.in_transaction then
 			-- allow recursive transactions through
-			transaction_code()
+			transaction_code(...)
 		else
 			self:begin_transaction();
-			local success, r1, r2, r3, r4, r5 = pcall(transaction_code)
+			local success, r1, r2, r3, r4, r5 = pcall(transaction_code, ...)
 			if success then
 				self:commit_transaction()
 				return r1, r2, r3, r4, r5

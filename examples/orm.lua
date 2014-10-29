@@ -3,21 +3,22 @@ package.path = '../source/?.lua;' .. package.path
 
 -- demonstrate the light and loose ORM model
 --
--- this demonstration introduces the grid and turn based game of runners and blockers
+-- this demonstration introduces the grid and turn based game of runners vs blockers
 -- the runners must reach the other end of the field, the blockers must prevent them
 -- the game is modelled using the dweeb ORM and changes are persisted to a database
 -- each time this script is run the game continues for a few more steps
--- demonstrating the persistence of data
+-- demonstrating the persistence of state
 --
 -- the rules
 -- the game runs on a 9x7 grid, runners start at one end, blockers in the other half
 -- there are 4 runners and two blockers
 -- the runners move first, one at a time, then the blockers
+-- diagonal squares are considered adjacent
 -- runners may stay still or move to an unoccupied adjacent square
 -- blockers may stay still or move to an unoccupied adjacent square
 -- if a runner moves to the last row then runners win
 -- if a blocker moves adjacent to any runners, those runners are tagged and are out
--- if a blocker or a runner moves to a speed square they get an extra turn
+-- if a blocker or a runner moves to a "speed square" (#) they get an extra turn
 
 -- load the modules we need
 local math = require('math')

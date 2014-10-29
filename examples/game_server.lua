@@ -1,20 +1,31 @@
 -- reference the brogue libraries
 package.path = '../source/?.lua;' .. package.path
 
--- demonstrate adding some custom functionality to the basic web server
--- add a custom chain, that chains access to other handlers
--- add a custom handler to actually handles some request
--- serve custom.html by default to demonstrate
+-- demonstrate a game server with the following features
+-- sessions using cookies (no real security)
+-- long polling status updates
+-- rascal proxies used to run game logic in its own thread
 
 -- use rascal
 local rascal = require('rascal.core')
 
 -- configure logging
-rascal.log_service:log_to_file('log/rascal_custom_world.log')
+rascal.log_service:log_to_file('log/game_server.log')
 rascal.log_service:log_to_console(true)
 
+-- standard rascal session db
+rascal.service('rascal.session.session_server', { 'db/session.sqlite' })
+
+-- we are going to use the game of blockers and runners
+-- as demonstrated in the ORM example
+-- the game will run in its own microserver process
+
+-- launch this class as a micro server, with these parameters
+rascal.service('classes.game_thread', { 'db/game.sqlite' })
+
+
 -- configure an HTTP server
-rascal.http_server('tcp://*:8080', 1, [[
+rascal.http_server('tcp://*:8080', 2, [[
 	prefix('/', {
 		-- chain in our custom handler
 		chain('classes.rascal_custom_chain', {}, {
