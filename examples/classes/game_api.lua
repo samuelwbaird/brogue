@@ -22,7 +22,15 @@ return class(function (game_api)
 		local input = request:json()
 		
 		if method == 'poll' then
-			response:set_body('poll from ' .. context.session_data.name)
+			local out = {
+				content = 'poll from ' .. context.session_data.name
+			}
+			if input then
+				for k, v in pairs(input) do
+					out[k] = v
+				end
+			end
+			response:set_json(out)
 		end
 		
 		return true

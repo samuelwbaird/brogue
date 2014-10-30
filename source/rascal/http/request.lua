@@ -26,7 +26,7 @@ return class(function (request)
 		local header = nil
 		local index_header = request_string:find('\r\n\r\n')
 		if index_header then
-			header = request_string:sub(1, index_header)
+			header = request_string:sub(1, index_header + 2)
 			if index_header < #request_string - 4 then
 				self.body = request_string:sub(index_header + 4)
 			end
