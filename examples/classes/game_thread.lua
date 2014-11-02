@@ -13,7 +13,19 @@ return class(function (game_thread)
 	function game_thread.new(db_path)
 		local self = super()
 		self:load_model(db_path)
+		
+		-- define an API to query and update the game
+		local rep_api_description = {
+			state = '-> *'
+		}
+		-- proxy_server(self, req_api_description, 'inproc://game.query', zmq.REP, 'game.query')
 
+		-- define a second API to pub/sub updates to the state
+		local pub_api_description = {
+			state_update = 'messages:*, state:*'
+		}
+		-- self.publish = proxy_server(self, pub_api_description, 'inproc://game.pub', zmq.PUB, 'game.pub')
+		
 		-- this server will run a normal coms event loop
 		-- and also a main timer to update the game state
 		-- update the game tick
