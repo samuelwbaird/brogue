@@ -1,3 +1,6 @@
+-- demonstrate basic DB access with dweeb
+-- copyright 2014 Samuel Baird MIT Licence
+
 -- reference the brogue libraries
 package.path = '../source/?.lua;' .. package.path
 

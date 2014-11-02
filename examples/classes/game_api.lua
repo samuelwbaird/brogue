@@ -1,3 +1,6 @@
+-- a custom handler that demonstrates serving API method calls
+-- copyright 2014 Samuel Baird MIT Licence
+
 local class = require('core.class')
 local array = require('core.array')
 

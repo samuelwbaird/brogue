@@ -1,5 +1,6 @@
 -- a custom request chain handler that demonstrates adding
 -- session information to requests
+-- copyright 2014 Samuel Baird MIT Licence
 
 local class = require('core.class')
 local rascal = require('rascal.core')

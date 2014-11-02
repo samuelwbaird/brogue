@@ -1,8 +1,9 @@
+-- demonstrate the light and loose ORM model
+-- copyright 2014 Samuel Baird MIT Licence
+
 -- reference the brogue libraries
 package.path = '../source/?.lua;' .. package.path
 
--- demonstrate the light and loose ORM model
---
 -- this demonstration introduces the grid and turn based game of runners vs blockers
 -- the runners must reach the other end of the field, the blockers must prevent them
 -- the game is modelled using the dweeb ORM and changes are persisted to a database

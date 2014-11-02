@@ -1,7 +1,8 @@
-package.path = '../source/?.lua;' .. package.path
-
 -- a custom request chain handler for rascal, run rascal_custom_world.lua to use this
 -- outputs the request url and all headers to the log, on every request
+-- copyright 2014 Samuel Baird MIT Licence
+
+package.path = '../source/?.lua;' .. package.path
 
 local class = require('core.class')
 local rascal = require('rascal.core')

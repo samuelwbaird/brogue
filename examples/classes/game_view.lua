@@ -1,6 +1,8 @@
+-- a custom handler that's going to serve the game view as dynamic html
+-- copyright 2014 Samuel Baird MIT Licence
+
 package.path = '../source/?.lua;' .. package.path
 
--- a custom handler that's going to serve the game view as dynamic html
 
 local class = require('core.class')
 local array = require('core.array')

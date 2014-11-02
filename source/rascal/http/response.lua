@@ -37,9 +37,10 @@ return class(function (response)
 	
 	function response:set_body(body)
 		if body then
-			self.headers['Content-Length'] = tostring(#body)
+			body = tostring(body)
+			self.headers['Content-Length'] = #body
+			self.body = body
 		end
-		self.body = body
 	end
 	
 	function response:set_json(json)

@@ -1,3 +1,6 @@
+-- demonstration game server
+-- copyright 2014 Samuel Baird MIT Licence
+
 -- reference the brogue libraries
 package.path = '../source/?.lua;' .. package.path
 

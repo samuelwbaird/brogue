@@ -1,3 +1,6 @@
+-- blocker model
+-- copyright 2014 Samuel Baird MIT Licence
+
 local math = require('math')
 
 local module = require('core.module')

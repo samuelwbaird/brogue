@@ -1,4 +1,4 @@
--- utils to create random keys
+-- utils to populate templated strings
 -- copyright 2014 Samuel Baird MIT Licence
 
 local string = require('string')

@@ -1,3 +1,6 @@
+-- http server with custom chain and resource handlers
+-- copyright 2014 Samuel Baird MIT Licence
+
 -- reference the brogue libraries
 package.path = '../source/?.lua;' .. package.path
 

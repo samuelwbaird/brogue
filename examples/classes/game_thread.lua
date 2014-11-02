@@ -1,3 +1,6 @@
+-- the main micro server running the game simulation
+-- copyright 2014 Samuel Baird MIT Licence
+
 local os = require('os')
 local math = require('math')
 

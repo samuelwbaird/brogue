@@ -1,3 +1,6 @@
+-- field model
+-- copyright 2014 Samuel Baird MIT Licence
+
 local module = require('core.module')
 
 local array = require('core.array')
