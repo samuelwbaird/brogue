@@ -59,8 +59,15 @@ return module(function (runner)
 		
 		-- otherwise the best clear space
 		for distance = 4, 1, -1 do
+			-- take a speed square first if available
 			for _, pos in ipairs(possible) do
-				if not pos:adjacent_blocker(distance) then
+				if pos.speed_square and not pos:adjacent_blocker(distance) then
+					return pos
+				end
+			end
+			-- or just anything
+			for _, pos in ipairs(possible) do
+				if not pos.speed_square and not pos:adjacent_blocker(distance) then
 					return pos
 				end
 			end

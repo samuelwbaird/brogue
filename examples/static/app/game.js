@@ -78,18 +78,19 @@ define(['underscore'], function(_) {
 					content.push('</table>')
 				}				
 				
-				if (data.turns) {
-					content.push('<br>');
-					_.each(data.turns, function (turn) {
-						content.push(turn.name + ' ');
-					});
-				}
-				
 				if (data.messages) {
 					content.push('<br>');
 					_.each(data.messages, function (message) {
-						content.push('<br>');
 						content.push(message);
+						content.push('<br>');
+					});
+				}
+				
+				if (data.turns) {
+					content.push('<br>');
+					content.push(data.turns[0].name + ' then ')
+					_.each(_.rest(data.turns), function (turn) {
+						content.push(turn.name + ' ');
 					});
 				}
 				

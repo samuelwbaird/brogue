@@ -53,7 +53,7 @@ return module(function (field)
 					column = c,
 					name = '[' .. c .. ':' .. r .. ']'
 				})
-				rows[r][c].speed_square = (r % 2 == 0 and c % 2 == 0)
+				rows[r][c].speed_square = (r % 3 == 0 and (c + 1) % 3 == 0)
 			end
 		end
 	

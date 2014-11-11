@@ -44,10 +44,22 @@ return module(function (blocker)
 		
 		-- check for a likely runner to chase
 		for distance = 1, 3 do
+			-- block speed squares first if possible
 			for _, pos in ipairs(possible) do
-				local r = pos:adjacent_runner(distance)
-				if r then
-					return pos
+				if pos.speed_square then
+					local r = pos:adjacent_runner(distance)
+					if r then
+						return pos
+					end
+				end
+			end
+			-- or just any square
+			for _, pos in ipairs(possible) do
+				if not pos.speed_square then
+					local r = pos:adjacent_runner(distance)
+					if r then
+						return pos
+					end
 				end
 			end
 		end

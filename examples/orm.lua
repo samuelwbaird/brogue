@@ -84,7 +84,7 @@ end
 
 -- ok now lets play a few more steps of the game, picking up from wherever we left off
 
-for steps = 1, 10 do
+for steps = 1, 100 do
 	print('')
 	
 	-- if the game is finished then reset positions
