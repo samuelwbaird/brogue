@@ -21,7 +21,7 @@ return class(function (game_thread)
 		local rep_api_description = {
 			state = '-> *'
 		}
-		-- proxy_server(self, req_api_description, 'inproc://game.query', zmq.REP, 'game.query')
+		proxy_server(self, rep_api_description, 'inproc://game.query', zmq.REP, 'game.query')
 
 		-- define a second API to pub/sub updates to the state
 		local pub_api_description = {
@@ -32,17 +32,32 @@ return class(function (game_thread)
 		-- this server will run a normal coms event loop
 		-- and also a main timer to update the game state
 		-- update the game tick
-		loop:add_interval(1000 * 5, function ()
+		loop:add_interval(1000 * 3, function ()
 			self:game_tick()
 		end)
 
 		return self
 	end
 	
+	-- api methods
+	
+	function game_thread:state()
+		-- define a view and the ability to project
+		-- orm objects onto the view in some consistent manner
+		-- then can share views across to worker threads easily for API calls...
+		-- the 'view' should hook up references at the other end id -> id
+		
+		-- or build HTML etc. in the main thread and don't separate...
+		
+		return self.field:externalise()
+	end
+		
+	-- prepare model
+	
 	function game_thread:load_model(db_path)
 		-- load the ORM model for runners vs blockers
 		-- see orm.lua example for more comments
-		print('open the model at ' .. db_path)
+		log('open the model at ' .. db_path)
 		self.model = model(db_path)
 		local model_classes = { 'field', 'position', 'blocker', 'runner' }
 		for _, class in ipairs(model_classes) do
@@ -62,32 +77,30 @@ return class(function (game_thread)
 			})
 			self.field:create_all_positions()
 			self.field:reset()
-			log('created field ' .. self.field.id .. '\n' .. self.field:display())
+			log('created field ' .. self.field.id)
 		end, self)
 	end
 	
+	-- main game tick
 	
 	function game_thread:game_tick()
-		log('game_thread:game_tick')
-		
 		if self.field.state == 'finished' then
 			-- reset positions and turns
 			self.model:transaction(function ()
 				self.field:reset()
 			end)
-			log('reset\n' .. self.field:display())
-
 
 		elseif self.field.state == 'game' then
 			local next = self.field.turns[1]
-			local move = next:get_move()
-			log(next.name .. ' -> ' .. (move and move.name or 'no move'))
+			if true or next.class_name == 'blocker' then
+				local move = next:get_move()
 
-			self.model:transaction(function (self)
-				local trace = self.field:apply_move(move)
-				trace:push(self.field:display())
-				log(table.concat(trace, '\n'))
-			end, self)
+				self.model:transaction(function (self)
+					local trace = self.field:apply_move(move)
+					-- trace:push(self.field:display())
+					-- log(table.concat(trace, '\n'))
+				end, self)
+			end
 		end	
 		
 	end

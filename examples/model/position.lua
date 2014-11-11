@@ -34,6 +34,8 @@ return module(function (position)
 		model.position:define_method('adjacent_runners', position.adjacent_runners)
 		model.position:define_method('adjacent_blocker', position.adjacent_blocker)
 		model.position:define_method('display', position.display)
+		
+		model.position:define_method('externalise', position.externalise)
 	end
 	
 	-- these functions called as methods of ORM instances --
@@ -135,6 +137,20 @@ return module(function (position)
 		else
 			return '. '
 		end
+	end
+	
+	function position:externalise()
+		local out = {
+			name = self.name,
+			speed = self.speed_square
+		}
+		for runner in self:runners() do
+			out.runner = runner.name
+		end
+		for blocker in self:blockers() do
+			out.blocker = blocker.name
+		end
+		return out
 	end
 
 end)

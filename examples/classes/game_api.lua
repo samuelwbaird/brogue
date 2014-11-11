@@ -12,6 +12,9 @@ return class(function (game_api)
 	function game_api.new()
 		local self = super()
 		-- connect to proxies
+		
+		self.game_query = rascal.registry:connect('game.query')
+		
 		return self
 	end
 	
@@ -23,17 +26,16 @@ return class(function (game_api)
 				
 		-- check for json input
 		local input = request:json()
-		
-		if method == 'poll' then
-			local out = {
-				content = 'poll from ' .. context.session_data.name
-			}
-			if input then
-				for k, v in pairs(input) do
-					out[k] = v
-				end
-			end
-			response:set_json(out)
+		if method == 'move' then
+			local turn = input.turn_no or 0
+			local position = input.position or ''
+			response:set_json({
+				turn_no = turn,
+				position = position,
+			})
+			
+		elseif method == 'poll' then
+			response:set_json(self.game_query:state())
 		end
 		
 		return true

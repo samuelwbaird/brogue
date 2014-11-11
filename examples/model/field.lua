@@ -27,6 +27,8 @@ return module(function (field)
 		model.field:define_method('apply_move', field.apply_move)
 		model.field:define_method('reset', field.reset)
 		model.field:define_method('display', field.display)
+		
+		model.field:define_method('externalise', field.externalise)
 	end
 	
 	-- these functions called as methods of ORM instances --
@@ -130,6 +132,7 @@ return module(function (field)
 		local out = array()
 		local next = self.turns[1]
 		if move then
+			out:push(next.name .. ' moves to ' .. move.name)
 			next.position = move
 			-- check for consequences
 			if next.class_name == 'runner' then
@@ -158,6 +161,9 @@ return module(function (field)
 			self:shift_turns()
 		end
 		
+		self.turn_no = self.turn_no + 1
+		self.messages = out:clone()
+		
 		return out
 	end
 
@@ -176,8 +182,11 @@ return module(function (field)
 			blocker.position = self:get_position(6, 3 + (i * 4))
 			i = i + 1
 		end
+		
 		self.state = 'game'
 		self.turns = turns
+		self.turn_no = 1
+		self.messages = array()
 	end
 
 	function field:display()
@@ -201,6 +210,42 @@ return module(function (field)
 		end
 		rows[8] = table.concat(rows[8], ' ')
 		return table.concat(rows, '\n')
+	end
+	
+	function field:externalise()
+		local out = {
+			state = self.state,
+			turn_no = self.turn_no,
+			messages = self.messages,
+		}
+		local rows = {}
+		for r = 1, 7 do
+			rows[r] = {}
+			for c = 1, 9 do
+				rows[r][c] = self:get_position(r, c):externalise()
+			end
+		end
+		out.grid = rows
+		
+		out.turns = array()
+		for _, instance in ipairs(self.turns) do
+			out.turns:push({
+				name = instance.name,
+				type = instance.class_name,
+			})
+		end
+		
+		if self.state == 'game' then
+			local next = self.turns[1]
+			out.moves = array()
+			for _, pos in ipairs(next.position:adjacent_randomised()) do
+				if not pos:is_occupied() then
+					out.moves:push(pos:externalise())
+				end
+			end
+		end
+		
+		return out
 	end
 
 

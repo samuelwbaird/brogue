@@ -30,7 +30,13 @@ rascal.service('classes.game_thread', { 'db/game.sqlite' })
 -- configure an HTTP server
 rascal.http_server('tcp://*:8080', 1, [[
 	prefix('/', {
-		-- chain in our custom handler
+		
+		-- access static files under resources prefix
+		prefix('resources/', {
+			static('static/', nil, false),
+		}),
+		
+		-- otherwise chain in our custom handler
 		chain('classes.game_session', {}, {
 			prefix('api_', {
 				handler('classes.game_api', {}),

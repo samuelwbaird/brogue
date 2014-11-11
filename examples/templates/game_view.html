@@ -1,52 +1,14 @@
-<html><head><title>Runners vs Blockers</title></head><body>
-<h1>You are player {{name}}</h1>
+<html>
+<head>
+
+<!-- require js for game javascript -->
+<script data-main="/resources/index.js" src="/resources/lib/require.js"></script>
+
+<title>Runners vs Blockers</title>
+</head>
+<body>
+<h1>Runners vs Blockers - Live game</h1>
+<h2>You are player {{name}}</h2>
 <div id="content" />
-
-<script type=text/javascript>
-// basic ajax JSON request
-ajax = function(url, data, successHandler, errorHandler) {
-  var xhr = typeof XMLHttpRequest != 'undefined'
-    ? new XMLHttpRequest()
-    : new ActiveXObject('Microsoft.XMLHTTP');
-  xhr.open('post', url, true);
-  xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-
-  xhr.onreadystatechange = function() {
-    var status;
-    var data;
-    if (xhr.readyState == 4) { // `DONE`
-      status = xhr.status;
-      if (status == 200) {
-        data = JSON.parse(xhr.responseText);
-        successHandler && successHandler(data);
-      } else {
-        errorHandler && errorHandler(status);
-      }
-    }
-  };
-  xhr.send(JSON.stringify(data));
-};
-
-// set up the polling
-var lastSeenId = 0
-var poll = function () {
-	ajax('api_poll',
-		{
-			move : lastSeenId
-		},
-		function (data) {
-			document.getElementById("content").innerHTML = data.content;
-			lastSeenId = data.move;
-			poll();
-		},
-		function (status) {
-			// poll();
-		});
-}
-
-window.onload = function () {
-	poll()
-}
-
-</script>
-</body></html>
+</body>
+</html>
