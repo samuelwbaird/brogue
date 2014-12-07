@@ -84,12 +84,12 @@ return class(function (http_worker)
 			end
 			-- did we run to the end of the handler with out it being handled
 			if not result then
-				rascal.log('error', '404 ' .. request.url_path)
+				rascal.log('error', '404 ' .. (request.url_path or ''))
 				response:set_status(404)
 			end
 		else
 			-- error during processing
-			rascal.log('error', '500 ' .. request.url_path .. ' ' .. result)
+			rascal.log('error', '500 ' .. (request.url_path or '') .. ' ' .. result)
 			response:set_status(500)
 			response:set_body(result)
 		end

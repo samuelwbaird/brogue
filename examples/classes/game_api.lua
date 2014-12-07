@@ -27,14 +27,18 @@ return class(function (game_api)
 		-- check for json input
 		local input = request:json()
 		if method == 'move' then
-			local turn = input.turn_no or 0
+			local turn_no = input.turn_no or 0
 			local position = input.position or ''
-			response:set_json({
-				turn_no = turn,
-				position = position,
-			})
+			local result = self.game_query:move(turn_no, position)
+			if result == true then
+				response:set_json("your moved to " .. position)
+			else
+				response:set_json(result)
+			end
 			
 		elseif method == 'poll' then
+			-- check the last state query, if it matches the current state then queue for long poll
+			
 			response:set_json(self.game_query:state())
 		end
 		

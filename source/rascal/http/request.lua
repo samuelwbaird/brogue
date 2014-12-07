@@ -76,7 +76,7 @@ return class(function (request)
 		if not self.original_url_path then
 			self.original_url_path = self.url_path
 		end
-		self.url_path = new_url_path
+		self.url_path = new_url_path or ''
 	end
 	
 	function request.url_decode(str)

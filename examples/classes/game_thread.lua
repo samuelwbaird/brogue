@@ -19,7 +19,8 @@ return class(function (game_thread)
 		
 		-- define an API to query and update the game
 		local rep_api_description = {
-			state = '-> *'
+			state = '-> *',
+			move = 'turn_no:int, position:string -> *',
 		}
 		proxy_server(self, rep_api_description, 'inproc://game.query', zmq.REP, 'game.query')
 
@@ -50,6 +51,32 @@ return class(function (game_thread)
 		-- or build HTML etc. in the main thread and don't separate...
 		
 		return self.field:externalise()
+	end
+	
+	function game_thread:move(turn_no, position)
+		-- confirm the current move number matches
+		if turn_no ~= self.field.turn_no then
+			return 'missed the turn'
+		end
+		
+		-- confirm the position is a valid next move
+		local confirmed = nil
+		for _, pos in ipairs(self.field.turns[1].position:adjacent_randomised()) do
+			if not pos:is_occupied() then
+				if pos.name == position then
+					confirmed = pos
+				end
+			end
+		end
+		if confirmed == nil then
+			return 'invalid move'
+		end
+		
+		self.model:transaction(function (self)
+			local trace = self.field:apply_move(confirmed)
+		end, self)
+		
+		return true
 	end
 		
 	-- prepare model
@@ -92,7 +119,7 @@ return class(function (game_thread)
 
 		elseif self.field.state == 'game' then
 			local next = self.field.turns[1]
-			if true or next.class_name == 'blocker' then
+			if next.class_name == 'blocker' then
 				local move = next:get_move()
 
 				self.model:transaction(function (self)

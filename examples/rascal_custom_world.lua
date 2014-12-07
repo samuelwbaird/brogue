@@ -34,7 +34,7 @@ rascal.http_server('tcp://*:8080', 1, [[
 ]])
 
 log('open your browser at http://localhost:8080/')
-log('ctrl-z to exit')
+log('ctrl-c to exit')
 
 -- last thing to do is run the main event loop
 rascal.run_loop()

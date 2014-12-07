@@ -99,7 +99,7 @@ define(['underscore'], function(_) {
 				lastSeenId = data.move;
 				
 				// poll();
-				setTimeout(poll, 1000)
+				setTimeout(poll, 500)
 			},
 			function (status) {
 				// poll();
@@ -114,7 +114,7 @@ define(['underscore'], function(_) {
 					turn_no : turn_no,
 					position : position
 				}, function (data) {
-					
+					document.getElementById("notice").innerHTML = "<pre>" + data + "</pre>";
 				}, function (status) {
 					
 				});

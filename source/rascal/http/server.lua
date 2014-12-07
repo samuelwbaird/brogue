@@ -42,20 +42,13 @@ return module(function (http_server)
 		
 		local input_buffer = cache(1024 * 16)	-- this will need to expire or is a DOS leak
 		
-		local testing = {}
-		
 		-- prepare the loop
 
 		loop:add_socket(external_router, function (external_router)
 			-- recieve handle + input
 			local input = external_router:recv_all()
 			local external_address, body = input[1], input[2]
-			
-			if testing[external_address] then
-				-- log('external_address is repeated')
-			end
-			testing[external_address] = external_address
-			
+						
 			local buffer = input_buffer:peek(external_address)
 			if buffer then
 				body = buffer.request .. body
@@ -79,7 +72,10 @@ return module(function (http_server)
 				})
 			else
 				-- print('input queued')
-				input_queue:push(input)
+				input_queue:push({
+					external_address,
+					body
+				})
 			end
 		end)
 		
