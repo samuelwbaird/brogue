@@ -13,7 +13,7 @@ package.path = '../source/?.lua;' .. package.path
 local rascal = require('rascal.core')
 
 -- configure logging
-rascal.log_service:log_to_file('log/game_server.log')
+-- rascal.log_service:log_to_file('log/game_server.log')
 rascal.log_service:log_to_console(true)
 
 -- standard rascal session db

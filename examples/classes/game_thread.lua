@@ -21,14 +21,15 @@ return class(function (game_thread)
 		local rep_api_description = {
 			state = '-> *',
 			move = 'turn_no:int, position:string -> *',
+			last = '-> int',
 		}
 		proxy_server(self, rep_api_description, 'inproc://game.query', zmq.REP, 'game.query')
 
 		-- define a second API to pub/sub updates to the state
 		local pub_api_description = {
-			state_update = 'messages:*, state:*'
+			signal_update = '',
 		}
-		-- self.publish = proxy_server(self, pub_api_description, 'inproc://game.pub', zmq.PUB, 'game.pub')
+		self.publish = proxy_server(self, pub_api_description, 'inproc://game.pub', zmq.PUB, 'game.pub')
 		
 		-- this server will run a normal coms event loop
 		-- and also a main timer to update the game state
@@ -76,7 +77,13 @@ return class(function (game_thread)
 			local trace = self.field:apply_move(confirmed)
 		end, self)
 		
+		self.publish:signal_update()
+		
 		return true
+	end
+		
+	function game_thread:last()
+		return self.field.turn_no
 	end
 		
 	-- prepare model
@@ -84,7 +91,7 @@ return class(function (game_thread)
 	function game_thread:load_model(db_path)
 		-- load the ORM model for runners vs blockers
 		-- see orm.lua example for more comments
-		log('open the model at ' .. db_path)
+		log('open the model at ' .. (db_path or 'memory'))
 		self.model = model(db_path)
 		local model_classes = { 'field', 'position', 'blocker', 'runner' }
 		for _, class in ipairs(model_classes) do
@@ -127,6 +134,8 @@ return class(function (game_thread)
 					-- trace:push(self.field:display())
 					-- log(table.concat(trace, '\n'))
 				end, self)
+				
+				self.publish:signal_update()
 			end
 		end	
 		

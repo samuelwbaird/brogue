@@ -131,7 +131,7 @@ return module(function (http_server)
 			return true
 		end
 		
-		-- -- missing content or header after a certain size
+		-- missing content or header after a certain size
 		if (not header_length) and (#request > 1024 * 32) then
 			input_buffer:clear(external_address)
 			return true

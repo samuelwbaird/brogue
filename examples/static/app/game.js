@@ -96,10 +96,10 @@ define(['underscore'], function(_) {
 				
 				content.push('</pre>')
 				document.getElementById("content").innerHTML = content.join('');
-				lastSeenId = data.move;
+				lastSeenId = data.turn_no;
 				
-				// poll();
-				setTimeout(poll, 500)
+				poll();
+				// setTimeout(poll);
 			},
 			function (status) {
 				// poll();

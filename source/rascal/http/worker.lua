@@ -141,7 +141,7 @@ return class(function (http_worker)
 		connection.request:reset()
 		self:handle_request(connection.request, connection.context, connection.response)
 	end
-
+	
 	-- creating scripted handlers
 
 	function http_worker.create_handler(configuration)
