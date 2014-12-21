@@ -15,19 +15,12 @@ return class(function (game_api)
 		-- connect to proxies
 		self.game_query = rascal.registry:connect('game.query')
 		rascal.registry:connect_sub('game.pub', self)
-		
-		-- pretending to treat each client as distinct
-		self.fake_id_counter = 0
-		self.defer_list = array()
 
 		return self
 	end
 	
 	function game_api:signal_update()
-		self.defer_list:with_each(function (defer)
-			defer.worker:signal(defer.fake_id)
-		end)
-		self.defer_list = array()
+		worker:signal('poll')
 	end
 	
 	function game_api:handle(request, context, response)
@@ -52,12 +45,7 @@ return class(function (game_api)
 			-- check the last state query, if it matches the current state then queue for long poll
 			local last_seen = input.move
 			if last_seen == self.game_query:last() then
-				self.fake_id_counter = self.fake_id_counter + 1
-				self.defer_list:push({
-					fake_id = self.fake_id_counter,
-					worker = context.http_worker
-				})
-				context.http_worker:defer(self.fake_id_counter, request, context, response)
+				worker:defer('poll', request, context, response)
 			else
 				response:set_json(self.game_query:state())
 			end

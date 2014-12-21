@@ -14,7 +14,7 @@ local os = require('os')
 
 -- core modules
 local class = require('core.class')
-local mru = require('core.mru')
+local mmru = require('core.mmru')
 
 -- normally runs as a rascal thread
 local rascal = require('rascal.core')
@@ -26,9 +26,13 @@ return class(function (http_worker)
 	
 	function http_worker.new(configuration, worker_request_address, push_reply_address, worker_identity)
 		local self = super()
-		self.deferred_connections = mru(1024)
+		self.deferred_connections = mmru(1024 * 16)
 		
 		-- print('starting worker ' .. worker_identity)
+		
+		-- a worker runs in its own thread, 1 worker per thread, make itself globally accessible
+		worker = self		
+		
 		local handler_script = http_worker.create_handler(configuration)
 		-- execute to create the chain and keep it
 		self.handler = handler_script(self)
@@ -129,17 +133,20 @@ return class(function (http_worker)
 
 	-- signal to retry handling any relevant long connections
 	function http_worker:signal(signal)
-		local connection = self.deferred_connections:pull(signal)
-		if not connection then
+		local connections = self.deferred_connections:pull(signal)
+		if not connections then
 			return
 		end
-		-- check its not too stale
-		if connection.request.time + connection.request.timeout < os.time() then
-			return
+		
+		for _, connection in ipairs(connections) do
+			-- check its not too stale
+			if connection.request.time + connection.request.timeout < os.time() then
+				return
+			end
+			connection.context.deferred = false
+			connection.request:reset()
+			self:handle_request(connection.request, connection.context, connection.response)
 		end
-		connection.context.deferred = false
-		connection.request:reset()
-		self:handle_request(connection.request, connection.context, connection.response)
 	end
 	
 	-- creating scripted handlers
