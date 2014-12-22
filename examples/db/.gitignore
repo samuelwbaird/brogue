@@ -1,0 +1,3 @@
+# don't commit any files from this folder
+.DS_Store
+*.sqlite
