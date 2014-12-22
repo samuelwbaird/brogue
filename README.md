@@ -18,18 +18,17 @@ _Rascal_ uses a registry to publish APIs across micro server boundaries and reso
 * Lua 5.1 or LuaJIT 2
 * SQLite 3
 * 0MQ 4
+* llthreads2
 * lzmq (Moteus)
-* llthreads (Neopallium)
 * lua-cjson
 * lua-csmgpack
 * lsqlite3
 
+### llthreads2
+	sudo luarocks install lua-llthreads2
+
 ### lzmq
-
-	sudo luarocks install lzmq --server=http://rocks.moonscript.org
-
-### llthreads
-	sudo luarocks install https://raw.github.com/Neopallium/lua-llthreads/master/rockspecs/lua-llthreads-scm-0.rockspec
+	sudo luarocks install lzmq
 
 ### lua-cjson
 

@@ -21,7 +21,6 @@ local thread_startup_semaphore = thread_semaphore('inproc://rascal.thread.startu
 -- core services ------------------------------------------------------
 
 -- logging
-
 detach({
 	[[local log_server = require('rascal.log') ()]],
 	[[log_server:bind('inproc://log')]],
@@ -31,7 +30,6 @@ detach({
 thread_startup_semaphore:wait('log')
 
 -- registry
-
 detach({
 	[[local registry = require('rascal.registry') ()]],
  	[[registry:bind()]],

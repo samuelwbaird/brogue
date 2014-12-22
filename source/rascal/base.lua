@@ -10,7 +10,7 @@ local array = require('core.array')
 
 -- rascal lua globals --
 debug = false
-display_worker_code = debug and false
+display_worker_code = false
 
 -- zeromq modules
 zmq = require('lzmq')
@@ -24,6 +24,10 @@ ctx = zthreads.get_parent_ctx()
 if not ctx then
 	is_main_thread = true
 	ctx = zmq.init(1)
+elseif not is_detached then
+	-- determine if this is the main thread context and has been automatically
+	-- created as new versions of lzmq seem to do
+	is_main_thread = true
 end
 
 -- dummy
@@ -63,6 +67,7 @@ detach = function (code, args)
 	thread_code:push('for key, value in pairs(shared_globals) do')
 	thread_code:push('	_G[key] = value')
 	thread_code:push('end')
+	thread_code:push('is_detached = true -- global flag that this is a child thread')
 
 	-- insert custom code
 	if type(code) == 'string' then

@@ -22,9 +22,13 @@ return module(function (http_server)
 		
 		-- prepare the sockets
 		
-		local external_router = ctx:socket(zmq.ROUTER)
-		external_router = ctx:socket(zmq.ROUTER)
-		external_router:set_router_raw(1)
+		local external_router
+		if zmq.STREAM then
+			external_router = ctx:socket(zmq.STREAM)
+		else
+			external_router = ctx:socket(zmq.ROUTER)
+			external_router:set_router_raw(1)
+		end
 		external_router:bind(address)
 		
 		local internal_router = ctx:socket(zmq.ROUTER)
