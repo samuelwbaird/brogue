@@ -20,6 +20,7 @@ return class(function (game_api)
 	end
 	
 	function game_api:signal_update()
+		-- signal any deferred workers for these keys
 		worker:signal('poll')
 	end
 	
@@ -45,6 +46,7 @@ return class(function (game_api)
 			-- check the last state query, if it matches the current state then queue for long poll
 			local last_seen = input.move
 			if last_seen == self.game_query:last() then
+				-- defer this work against the supplied set of keys
 				worker:defer('poll', request, context, response)
 			else
 				response:set_json(self.game_query:state())

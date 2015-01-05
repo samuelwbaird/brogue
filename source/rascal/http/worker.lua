@@ -14,7 +14,8 @@ local os = require('os')
 
 -- core modules
 local class = require('core.class')
-local mmru = require('core.mmru')
+local mru = require('core.mru')
+local mtm = require('core.mtm')
 
 -- normally runs as a rascal thread
 local rascal = require('rascal.core')
@@ -26,12 +27,14 @@ return class(function (http_worker)
 	
 	function http_worker.new(configuration, worker_request_address, push_reply_address, worker_identity)
 		local self = super()
-		self.deferred_connections = mmru(1024 * 16)
-		
-		-- print('starting worker ' .. worker_identity)
 		
 		-- a worker runs in its own thread, 1 worker per thread, make itself globally accessible
 		worker = self		
+		
+		-- fixed number of kept alive connections
+		self.deferred_connections = mru(1024 * 16)
+		-- arbitrary matrix of signal -> connection relationships
+		self.defer_signals = mtm(true)
 		
 		local handler_script = http_worker.create_handler(configuration)
 		-- execute to create the chain and keep it
@@ -77,6 +80,11 @@ return class(function (http_worker)
 	end
 
 	function http_worker:handle_request(request, context, response)
+		-- TODO: think about this stuff
+		-- could make self, response, context & response global references here
+		-- could add methods to context that wrap stuff eg. context:defer()
+		-- could set up a defer_matrix object to use here
+		
 		-- rascal.log('verbose', request.method .. ' ' .. (request.url_path or '') .. ' ' .. (request.url_query or ''))
 
 		-- run request, context, response through the handler configuration
@@ -118,35 +126,56 @@ return class(function (http_worker)
 		end
 	end
 	
+	-- high level long polling
+	
+	-- weakly referenced many to many triggers to signal relationship
+	function http_worker:defer(keys, request, context, response)
+		local token = self:capture_deferred(request, context, response)
+		self.defer_signals:push(keys, token)
+	end
+	
+	-- signal any key to resume any associated connections
+	function http_worker:signal(key)
+		local tokens = self.defer_signals:pull(key)
+		for _, token in ipairs(tokens) do
+			self:resume(token)
+		end
+	end
+	
+	-- low level long polling
+	
 	-- support long polling, defer response until signalled
-	function http_worker:defer(signal, request, context, response)
+	function http_worker:capture_deferred(request, context, response)
 		if not context.deferred then
-			context.deferred = true
-			context.defer_count = 1 + (context.defer_count or 0)
-			self.deferred_connections:push(signal, {
+			context.deferred = {}	-- unique token
+			self.deferred_connections:push(context.deferred, {
 				request = request,
 				context = context,
 				response = response,
 			})
 		end
+		return context.deferred
 	end
 
 	-- signal to retry handling any relevant long connections
-	function http_worker:signal(signal)
-		local connections = self.deferred_connections:pull(signal)
-		if not connections then
+	function http_worker:resume(deferred)
+		local connection = self.deferred_connections:pull(deferred)
+		if not connection then
 			return
 		end
 		
-		for _, connection in ipairs(connections) do
-			-- check its not too stale
-			if connection.request.time + connection.request.timeout < os.time() then
-				return
-			end
-			connection.context.deferred = false
-			connection.request:reset()
-			self:handle_request(connection.request, connection.context, connection.response)
+		-- check it hasn't already been signalled
+		if not connection.context.deferred then
+			return
 		end
+		-- check its not too stale
+		if connection.request.time + connection.request.timeout < os.time() then
+			return
+		end
+		
+		connection.context.deferred = nil
+		connection.request:reset()
+		self:handle_request(connection.request, connection.context, connection.response)
 	end
 	
 	-- creating scripted handlers

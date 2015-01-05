@@ -19,14 +19,14 @@ return class(function (session_server)
 	local super = session_server.new
 
 	session_server.api_description = {
-		create = 'ttl:int, internal_id:string:optional, data:*:optional -> session_id',
-		get = 'internal_id:string -> session:*',
+		create = 'ttl:int, data:*:optional -> session_id',
+		get = 'session_id:string -> session:*',
 		validate = 'session_id:string -> session_data:*',
 	}
 
 	session_server.push_api_description = {
-		set_session_data = 'internal_id:string, session_data:*',
-		set_value = 'internal_id:string, key:string, value:*',
+		set_session_data = 'session_id:string, session_data:*',
+		set_value = 'session_id:string, key:string, value:*',
 		extend = 'session_id:string, ttl:int:optional',
 	}
 	
@@ -49,7 +49,6 @@ return class(function (session_server)
 		self.db:prepare_table('session', {
 			columns = {
 				{ name = 'session_id', type = 'TEXT UNIQUE' },
-				{ name = 'internal_id', type = 'TEXT UNIQUE' },
 				{ name = 'session_data', type = 'TEXT' },
 				{ name = 'ttl', type = 'INTEGER' },
 				{ name = 'expiry', type = 'INTEGER' },
@@ -69,18 +68,16 @@ return class(function (session_server)
 		self.publish = proxy_server(self, session_server.pub_api_description, pub_channel, zmq.PUB, 'rascal.session.pub')
 
 		-- prepared DB queries
-		self.db_check_session_id = self.db:prepare('SELECT COUNT(*) FROM `session` WHERE `session_id` = ? OR `internal_id` = ? LIMIT 1')
-		self.db_insert_session = self.db:insert('session', { 'session_id', 'internal_id', 'session_data', 'ttl', 'expiry'}):prepare()
-		self.db_delete_session_by_internal_id = self.db:delete('session', { 'internal_id' }):prepare()
+		self.db_check_session_id = self.db:prepare('SELECT COUNT(*) FROM `session` WHERE `session_id` = ? LIMIT 1')
+		self.db_insert_session = self.db:insert('session', { 'session_id', 'session_data', 'ttl', 'expiry'}):prepare()
 		
 		self.db_check_expiring_sessions = self.db:prepare('SELECT `session_id` FROM `session` WHERE `expiry` < ?')
 		self.db_expire_sessions = self.db:prepare('DELETE FROM `session` WHERE `expiry` < ?')
 		
-		self.db_get_session_by_internal_id = self.db:prepare('SELECT * FROM `session` WHERE `internal_id` = ?')
 		self.db_get_session_by_session_id = self.db:prepare('SELECT * FROM `session` WHERE `session_id` = ?')
 		
 		self.db_set_session_expiry = self.db:update('session', { 'expiry' }, { 'session_id' }):prepare()
-		self.db_set_session_data = self.db:update('session', { 'session_data' }, { 'internal_id' }):prepare()
+		self.db_set_session_data = self.db:update('session', { 'session_data' }, { 'session_id' }):prepare()
 		
 		return self
 	end	
@@ -105,30 +102,20 @@ return class(function (session_server)
 	
 	-- primary API
 
-	function session_server:create(ttl, internal_id, session_data)
+	function session_server:create(ttl, session_data)
 		self.db:begin_transaction()
-		if internal_id then
-			local old_session = self.db_get_session_by_internal_id:query({ internal_id }):row()
-			if old_session then
-				self.publish:expire(old_session.session_id)
-				self.db_delete_session_by_internal_id:execute({ internal_id })
-			end
-		end
 		
 		local session_id = nil
 		while session_id == nil do
 			local key = random_key.printable(32)
-			if self.db_check_session_id:query({ key, key }):value() == 0 then
+			if self.db_check_session_id:query({ key }):value() == 0 then
 				session_id = key
 				break
 			end
 		end
-		
-		-- default to session id if required
-		internal_id = internal_id or session_id
-		
+
 		-- prepare statement to insert new session
-		self.db_insert_session:execute({ session_id, internal_id, cmsgpack.pack(session_data or {}), ttl, self:expiry(ttl) })
+		self.db_insert_session:execute({ session_id, cmsgpack.pack(session_data or {}), ttl, self:expiry(ttl) })
 		self.db:commit_transaction()
 		
 		-- update any other caches
@@ -137,8 +124,8 @@ return class(function (session_server)
 		return session_id
 	end
 	
-	function session_server:get(internal_id)
-		local session = self.db_get_session_by_internal_id:query({ internal_id }):row()
+	function session_server:get(session_id)
+		local session = self.db_get_session_by_session_id:query({ session_id }):row()
 		if session then
 			session.session_data = cmsgpack.unpack(session.session_data)
 			return session
@@ -159,21 +146,21 @@ return class(function (session_server)
 	
 	-- push API
 	
-	function session_server:set_session_data(internal_id, session_data)
-		local session = self:get(internal_id)
+	function session_server:set_session_data(session_id, session_data)
+		local session = self:get(session_id)
 		if session then
 			session_data = session_data or {}
-			self.db_set_session_data:execute({ cmsgpack.pack(session_data), internal_id })
+			self.db_set_session_data:execute({ cmsgpack.pack(session_data), session_id })
 			self.publish:update(session_id, session_data)
 		end
 	end
 	
-	function session_server:set_value(internal_id, key, value)
-		local session = self:get(internal_id)
+	function session_server:set_value(session_id, key, value)
+		local session = self:get(session_id)
 		if session then
 			local session_data = session.session_data
 			session_data[key] = value
-			self.db_set_session_data:execute({ cmsgpack.pack(session_data), internal_id })
+			self.db_set_session_data:execute({ cmsgpack.pack(session_data), session_id })
 			self.publish:update(session_id, session_data)
 		end		
 	end

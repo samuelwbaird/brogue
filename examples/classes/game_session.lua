@@ -34,7 +34,7 @@ return class(function (game_session)
 				name = random_key.printable(4)
 			}
 			-- save the new session
-			local session_id = self.session_server:create(60 * 60 * 24, session_data.name, session_data)
+			local session_id = self.session_server:create(60 * 60 * 24, session_data)
 			
 			-- set the new cookie
 			response:set_header('Set-Cookie', 'session=' .. session_id .. '; Path=/;')
