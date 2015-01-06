@@ -93,7 +93,7 @@ return class(function (model)
 		local new_class = model_class(self, class_name, indexed_fields, additional_indexes, cache_size)
 		self.classes[class_name] = new_class
 		self[class_name] = new_class
-		return new
+		return new_class
 	end
 
 end)
