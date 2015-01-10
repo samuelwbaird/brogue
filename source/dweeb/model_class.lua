@@ -13,6 +13,7 @@ local cmsgpack = require('cmsgpack')
 
 -- local module
 local sqlite = require('dweeb.sqlite')
+local view = require('dweeb.view')
 local model_instance_factory = require('dweeb.model_instance_factory')
 
 return class(function (model_class)
@@ -241,6 +242,16 @@ return class(function (model_class)
 	
 	function model_class:define_method(name, fn)
 		self.class_instance_factory.register_constant(name, fn)
+	end
+	
+	function model_class:define_view(name, definition, ...)
+		local v = view(definition, ...)
+		self.class_instance_factory.register_property(name, function (instance)
+			return function ()
+				return v:externalise(instance)
+			end
+		end)
+		return v
 	end
 
 end)
