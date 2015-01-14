@@ -20,7 +20,7 @@ return class(function (session_cache)
 	function session_cache.new()
 		local self = super()
 		-- cache session info in each worker to reduce contention
-		self.cache = cache(1024 * 16)
+		self.cache = cache(1024 * 64)
 		-- connect to the real session server as required
 		self.session_api = rascal.registry:connect('rascal.session.api')
 		self.session_push = rascal.registry:connect('rascal.session.push')
