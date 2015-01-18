@@ -40,7 +40,7 @@ return class(function (static)
 			end
 		end
 		-- reject anything trying to path back with ..
-		if path:find('..') then
+		if path:find('%.%.') then
 			return false
 		end
 		-- check that we actually have a path to work with
