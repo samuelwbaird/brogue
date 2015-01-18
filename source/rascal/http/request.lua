@@ -21,7 +21,12 @@ return class(function (request)
 		self.headers = {}
 		
 		self.time = os.time()
-		self.timeout = 30		-- replace with real value from headers if applicable
+		
+		-- set a timeout after which long pollling should consider this connection dead
+		-- a short timeout means less chance of sending data to a recycled connection address
+		-- a too short timeout means the browser waiting for data we don't send that we could have
+		-- it seems mobile safari defaults to 60s but we may need to adjust this based on the referral string
+		self.timeout = 60
 		
 		local header = nil
 		local index_header = request_string:find('\r\n\r\n')

@@ -328,6 +328,12 @@ local builder = class(function (builder)
 		return self
 	end
 	
+	function builder:upsert(table_name, fields)
+		local field_names, standins = self:add_names_and_standins(fields)
+		self.clauses:push('INSERT OR REPLACE INTO ' .. table_name .. ' (' .. table.concat(field_names, ', ') .. ') VALUES (' .. table.concat(standins, ', ') .. ')')
+		return self
+	end
+	
 	function builder:delete(table_name, where_fields)
 		self.clauses:push('DELETE FROM ' .. table_name)
 		if where_fields then
@@ -470,7 +476,7 @@ local db = class(function (db)
 				return r1, r2, r3, r4, r5
 			else
 				self:abort_transaction()
-				error(result)
+				error(r1)
 			end
 		end
 	end
@@ -643,6 +649,11 @@ local db = class(function (db)
 	function db:insert(...)
 		local builder = builder(self)
 		return builder:insert(...)
+	end
+	
+	function db:upsert(...)
+		local builder = builder(self)
+		return builder:upsert(...)
 	end
 	
 	function db:update(...)

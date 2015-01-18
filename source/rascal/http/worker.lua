@@ -163,17 +163,20 @@ return class(function (http_worker)
 		if not connection then
 			return
 		end
-		
+
 		-- check it hasn't already been signalled
 		if not connection.context.deferred then
 			return
 		end
+
+		-- this connection is no longer in deferred state
+		connection.context.deferred = nil
+
 		-- check its not too stale
 		if connection.request.time + connection.request.timeout < os.time() then
 			return
 		end
 		
-		connection.context.deferred = nil
 		connection.request:reset()
 		self:handle_request(connection.request, connection.context, connection.response)
 	end
