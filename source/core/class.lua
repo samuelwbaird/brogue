@@ -37,7 +37,6 @@ local class_meta = {
 				-- intersect with lazy constructor
 				if lazy_property_constructors[name] then
 					local val = lazy_property_constructors[name]()
-					rawset(obj, "has_" .. name, true)
 					rawset(obj, name, val)
 					return val
 				end

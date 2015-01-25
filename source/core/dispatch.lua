@@ -83,6 +83,16 @@ local update_set = class(function (update_set)
 		end
 	end
 	
+	function update_set:get(tag_or_obj)
+		local out = {}
+		for _, entry in ipairs(self.set) do
+			if entry[1] == tag_or_obj or entry[2] == tag_or_obj then
+				out[#out + 1] = entry[1]
+			end
+		end
+		return out
+	end
+	
 	function update_set:remove(tag_or_obj)
 		for _, entry in ipairs(self.set) do
 			if entry[1] == tag_or_obj or entry[2] == tag_or_obj then
@@ -196,6 +206,8 @@ local dispatch = class(function (dispatch)
 		self.update_set:update(update_function)
 	end
 	
+	dispatch.dispatch = dispatch.update
+	
 	-- proxy through some methods from the update_set
 	
 	function dispatch:clear()
@@ -216,43 +228,118 @@ end)
 local thread = class(function (thread)
 	local super = thread.new
 	
-	function thread.new(weave, thread_function)
+	-- lazily created dispatch objects
+	thread:lazy({
+		on_update = function () return dispatch() end,
+		on_suspend = function () return dispatch() end,
+		on_resume = function () return dispatch() end,
+		on_exit = function () return dispatch() end,
+	})
+	
+	function thread.new(weave, thread_function, tag)
 		local self = super()
 		self.weave = weave
-		self.globals = {}
+		self.tag = tag
 		
-		-- lazily created dispatch objects
-		self.on_update = nil
-		self.on_resume = nil
-		self.on_suspend = nil
+		-- customise the environment for the thread
+		self.globals = {
+			thread = self,
+			weave = weave,
+			tag = tag,			
+		}
+		setmetatable(self.globals, weave.shared_globals)
+		
+		-- lazy access to on_update dispatch functions
+		globals.delay = function (...) thread.on_update:delay(...) end
+		globals.recur = function (...) thread.on_update:recur(...) end
+		globals.hook = function (...) thread.on_update:hook(...) end
+		globals.schedule = function (...) thread.on_update:schedule(...) end
+		globals.wrap = function (...) thread.on_update:wrap(...) end
 		
 		-- set up the local convenience stuff for this thread
-		
+		local proxies = { 'run', 'yield', 'exit' }
+		for _, proxy in ipairs(proxies) do
+			self.globals[proxy] = function (...)
+				self[proxy](self, ...)
+			end
+		end
 		
 		-- create the co-routine
-		if thread_function then
-			self:run(thread_function)
-		end
+		self:run(thread_function)
 		
 		return self
 	end
 	
 	function thread:update()
 		-- if we have an on_update then dispatch it
-			
+		if rawget(self, 'on_update') then
+			self.on_update:update()
+		end
 			
 		-- if this thread is waiting on something (eg. a yield number of frames)
 		-- then check the wait condition
-			
-		-- if we have a co-routine then resume it
-
-
-
+		if self.wait_condition then
+			if type(self.wait_condition) == 'number' then
+				self.wait_condition = self.wait_condition - 1
+				if self.wait_condition > 0 then
+					return false
+				end
+			elseif type(self.wait_condition) == 'function' then
+				local check = self.wait_condition()
+				if not check then
+					return false
+				end
+			end
+		end
+		
+		-- if we have continued then the wait condition must have cleared
+		self.wait_condition = nil
+		
+		-- continue execution
+		if self.coroutine then
+			coroutine.resume(self.coroutine)
+		end
+	
+		-- if we're complete then exit
+		if not self.coroutine or coroutine.status(self.coroutine) == 'dead' then
+			if rawget(self, 'on_exit') then
+				self.on_exit:update()
+			end
+			return true
+		end
 	end
 	
+	-- thread functions, proxied into functions in the thread environment
+	
+	-- transfer the main thread into this function with no return
 	function thread:run(thread_function)
 		setfenv(thread_function, self.globals)
 		self.coroutine = coroutine.create(thread_function)
+		
+		-- run this coroutine until yield
+		coroutine.resume(self.coroutine)
+		
+		-- yield out of the original
+		coroutine.yield()
+	end
+	
+	-- call into another co-routine until it completes then resume the current one
+	function thread:call(sub_thread_function, ...)
+		setfenv(sub_thread_function, self.globals)
+		sub_thread_function(...)
+	end
+	
+	function thread:yield(wait_condition)
+		self.wait_condition = wait_condition
+		coroutine.yield()
+	end
+	
+	thread.wait = thread.yield
+	
+	function thread:exit()
+		self.wait_condition = nil
+		self.coroutine = nil
+		coroutine.yield()
 	end
 
 end)
@@ -261,40 +348,73 @@ end)
 local weave = class(function (weave)
 	local super = weave.new
 	
-	function weave.new()
+	function weave.new(environment)
 		local self = super()
+		
 		self.shared_globals = {}
+		setmetatable(self.shared_globals, { __index = environment or _G })
+		
+		self.update_set = update_set()
+		self.suspend_set = update_set()
+		
 		return self
 	end
 	
-	function weave:update()
-		-- update all threads
+	-- new, suspend, resume
+	
+	function weave:thread(thread_function, tag)
+		local t = thread(self, thread_function, tag)
+		self.update_set:add(t, tag)
+		return t
 	end
 	
-	-- shared globals
+	function weave:suspend(thread_or_tag)
+		local set = self.update_set:get(thread_or_tag)
+		if #set > 0 then
+			self.update_set:remove(thread_or_tag)
+			for _, thread in ipairs(set) do
+				self.suspend_set:add(thread, thread.tag)
+				if rawget(thread, 'on_suspend') then
+					thread.on_suspend:update()
+				end
+			end
+		end
+	end
 	
-	-- new thread (function, globals)
-	-- add thread
-	-- remove thread
-	-- clear or remove by tag
-
-	-- from inside a thread
-	-- delay (condition)
-	-- suspend/remove (remove references)
-	-- resume ()
+	function weave:resume(thread_or_tag)
+		local set = self.suspend_set:get(thread_or_tag)
+		if #set > 0 then
+			self.suspend_set:remove(thread_or_tag)
+			for _, thread in ipairs(set) do
+				self.update_set:add(thread, thread.tag)
+				if rawget(thread, 'on_resume') then
+					thread.on_resume:update()
+				end
+			end
+		end
+	end
+	
+	-- clear and remove
+	
+	function weave:clear()
+		self.update_set:clear()
+		self.suspend_set:clear()
+	end
+	
+	function weave:remove(thread_or_tag)
+		self.update_set:remove(thread_or_tag)
+		self.suspend_set:remove(thread_or_tag)
+	end
+	 
 	-- update
-	-- exit
-	-- -> run this thread and wait for it to complete
-	-- -> detach this thread separately
-	-- -> how about detaching a micro-delay? in five ticks of this thread reset this flag and run this function
 	
-	-- simplest model is all threads retained and 'updated' with each tick
-	-- each condition is just checked every frame for every thread
-	-- this might have too much overhead, trigger conditions could just suspend, resume? perhaps allow GC of waiting threads
-	-- simplest might be the best initial approach
+	local function update_function(thread)
+		thread:update()
+	end
 	
-	-- each thread have its own globals (as well as shared)
-	-- each thread have a on_update, on_suspend, on_resume, on_begin hook
+	function weave:update()
+		self.update_set:update(update_function)
+	end
 
 end)
 
