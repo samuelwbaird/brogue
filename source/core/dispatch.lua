@@ -53,9 +53,14 @@ local update_set = class(function (update_set)
 			local entry = set[index]
 			
 			-- skip 'removed' entries
-			if (not remove_set) or remove_set[entry] == nil then
+			if (not remove_set) or (remove_set[entry] == nil) then
 				-- use a provided function or assume the obj itself is a function
-				local result = fn and fn(entry[1]) or entry[1]()
+				local result = nil
+				if fn then
+					result = fn(entry[1])
+				else
+					result = entry[1]()
+				end
 			
 				-- if true then this object is no longer required
 				if result then
@@ -107,13 +112,13 @@ local update_set = class(function (update_set)
 	end
 	
 	function update_set:is_empty()
-		return #set > 0
+		return #self.set > 0
 	end
 	
 	function update_set:do_removals()
 		local new_set = {}
-		for _, entry in ipairs(set) do
-			if not remove_set[entry] then
+		for _, entry in ipairs(self.set) do
+			if not self.remove_set[entry] then
 				new_set[#new_set + 1] = entry
 			end
 		end
@@ -236,7 +241,7 @@ local thread = class(function (thread)
 		on_exit = function () return dispatch() end,
 	})
 	
-	function thread.new(weave, thread_function, tag)
+	function thread.new(weave, tag, thread_function, ...)
 		local self = super()
 		self.weave = weave
 		self.tag = tag
@@ -247,17 +252,19 @@ local thread = class(function (thread)
 			weave = weave,
 			tag = tag,			
 		}
-		setmetatable(self.globals, weave.shared_globals)
+		setmetatable(self.globals, {
+			__index = weave.shared_globals
+		})
 		
 		-- lazy access to on_update dispatch functions
-		globals.delay = function (...) thread.on_update:delay(...) end
-		globals.recur = function (...) thread.on_update:recur(...) end
-		globals.hook = function (...) thread.on_update:hook(...) end
-		globals.schedule = function (...) thread.on_update:schedule(...) end
-		globals.wrap = function (...) thread.on_update:wrap(...) end
+		self.globals.delay = function (...) thread.on_update:delay(...) end
+		self.globals.recur = function (...) thread.on_update:recur(...) end
+		self.globals.hook = function (...) thread.on_update:hook(...) end
+		self.globals.schedule = function (...) thread.on_update:schedule(...) end
+		self.globals.wrap = function (...) thread.on_update:wrap(...) end
 		
 		-- set up the local convenience stuff for this thread
-		local proxies = { 'run', 'yield', 'exit' }
+		local proxies = { 'suspend', 'resume', 'run', 'yield', 'exit', 'call', 'wait' }
 		for _, proxy in ipairs(proxies) do
 			self.globals[proxy] = function (...)
 				self[proxy](self, ...)
@@ -265,9 +272,30 @@ local thread = class(function (thread)
 		end
 		
 		-- create the co-routine
-		self:run(thread_function)
+		self:run(thread_function, ...)
 		
 		return self
+	end
+	
+	function thread:suspend()
+		self.weave:suspend(self)
+	end
+	
+	function thread:resume()
+		self.weave:resume(self)
+	end
+	
+	function thread:safe_update(on_error)
+		local success, result = pcall(thread.update, self)
+		if not success then
+			self.error = result
+			if on_error then
+				on_error(result)
+			end
+			return true
+		else
+			return result
+		end
 	end
 	
 	function thread:update()
@@ -296,8 +324,11 @@ local thread = class(function (thread)
 		self.wait_condition = nil
 		
 		-- continue execution
-		if self.coroutine then
-			coroutine.resume(self.coroutine)
+		if self.coroutine and coroutine.status(self.coroutine) ~= 'dead'then
+			local success, e = coroutine.resume(self.coroutine)
+			if not success then
+				error(e)
+			end
 		end
 	
 		-- if we're complete then exit
@@ -312,15 +343,22 @@ local thread = class(function (thread)
 	-- thread functions, proxied into functions in the thread environment
 	
 	-- transfer the main thread into this function with no return
-	function thread:run(thread_function)
+	function thread:run(thread_function, ...)
+		local yield_after = self.coroutine ~= nil and self.coroutine == coroutine.running()
+		
 		setfenv(thread_function, self.globals)
 		self.coroutine = coroutine.create(thread_function)
 		
 		-- run this coroutine until yield
-		coroutine.resume(self.coroutine)
+		local success, e = coroutine.resume(self.coroutine, ...)
+		if not success then
+			error(e)
+		end
 		
-		-- yield out of the original
-		coroutine.yield()
+		if yield_after then
+			-- yield out of the original
+			coroutine.yield()
+		end
 	end
 	
 	-- call into another co-routine until it completes then resume the current one
@@ -362,10 +400,20 @@ local weave = class(function (weave)
 	
 	-- new, suspend, resume
 	
-	function weave:thread(thread_function, tag)
-		local t = thread(self, thread_function, tag)
+	function weave:thread(thread_function, ...)
+		return self:tagged_thread(nil, thread_function, ...)
+	end
+	
+	function weave:tagged_thread(tag, thread_function, ...)
+		local t = thread(self, tag, thread_function, ...)
 		self.update_set:add(t, tag)
 		return t
+	end
+	
+	-- load thread code from file
+	function weave:loadfile(filename, ...)
+		local agent = assert(loadfile(filename))
+		self:tagged_thread(filename, agent, ...)
 	end
 	
 	function weave:suspend(thread_or_tag)
@@ -408,15 +456,19 @@ local weave = class(function (weave)
 	 
 	-- update
 	
-	local function update_function(thread)
-		thread:update()
-	end
+	function weave:safe_update(on_error)
+		self.update_set:update(function (thread)
+			return thread:safe_update(on_error)
+		end)
+	end	
 	
 	function weave:update()
-		self.update_set:update(update_function)
+		self.update_set:update(function (thread)
+			thread:update()
+		end)
 	end
 
 end)
 
 -- publish the package of classes, default to constructing a dispatch object
-return class.package({ update_set, dispatch, thread, weave }, dispatch.new)
+return class.package({ update_set = update_set, dispatch = dispatch, thread = thread, weave = weave }, dispatch.new)
