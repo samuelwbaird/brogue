@@ -106,7 +106,7 @@ local update_set = class(function (update_set)
 			end
 		end
 		
-		if not self.is_updating then
+		if not self.is_updating and self.has_removals then
 			self:do_removals()
 		end
 	end
@@ -153,7 +153,7 @@ local dispatch = class(function (dispatch)
 	-- call for this number of steps/ticks/frames
 	function dispatch:recur(count, fn, tag)
 		self.update_set:add({
-			type = 'delay',
+			type = 'recur',
 			count = count,
 			repeat_fn = fn,
 		}, tag)
@@ -257,11 +257,11 @@ local thread = class(function (thread)
 		})
 		
 		-- lazy access to on_update dispatch functions
-		self.globals.delay = function (...) thread.on_update:delay(...) end
-		self.globals.recur = function (...) thread.on_update:recur(...) end
-		self.globals.hook = function (...) thread.on_update:hook(...) end
-		self.globals.schedule = function (...) thread.on_update:schedule(...) end
-		self.globals.wrap = function (...) thread.on_update:wrap(...) end
+		self.globals.delay = function (...) self.on_update:delay(...) end
+		self.globals.recur = function (...) self.on_update:recur(...) end
+		self.globals.hook = function (...) self.on_update:hook(...) end
+		self.globals.schedule = function (...) self.on_update:schedule(...) end
+		self.globals.wrap = function (...) self.on_update:wrap(...) end
 		
 		-- set up the local convenience stuff for this thread
 		local proxies = { 'suspend', 'resume', 'run', 'yield', 'exit', 'call', 'wait' }
