@@ -264,7 +264,7 @@ local thread = class(function (thread)
 		self.globals.wrap = function (...) self.on_update:wrap(...) end
 		
 		-- set up the local convenience stuff for this thread
-		local proxies = { 'suspend', 'resume', 'run', 'yield', 'exit', 'call', 'wait' }
+		local proxies = { 'suspend', 'resume', 'execute', 'tagged_run', 'run', 'yield', 'exit', 'call', 'wait' }
 		for _, proxy in ipairs(proxies) do
 			self.globals[proxy] = function (...)
 				self[proxy](self, ...)
@@ -272,7 +272,7 @@ local thread = class(function (thread)
 		end
 		
 		-- create the co-routine
-		self:run(thread_function, ...)
+		self:execute(thread_function, ...)
 		
 		return self
 	end
@@ -343,7 +343,7 @@ local thread = class(function (thread)
 	-- thread functions, proxied into functions in the thread environment
 	
 	-- transfer the main thread into this function with no return
-	function thread:run(thread_function, ...)
+	function thread:execute(thread_function, ...)
 		local yield_after = self.coroutine ~= nil and self.coroutine == coroutine.running()
 		
 		setfenv(thread_function, self.globals)
@@ -365,6 +365,15 @@ local thread = class(function (thread)
 	function thread:call(sub_thread_function, ...)
 		setfenv(sub_thread_function, self.globals)
 		sub_thread_function(...)
+	end
+	
+	-- set up another thread in parallal
+	function thread:run(thread_function, ...)
+		return self.weave:thread(thread_function, ...)
+	end
+	
+	function thread:tagged_run(tag, thread_function, ...)
+		return self.weave:tagged_thread(tag, thread_function, ...)
 	end
 	
 	function thread:yield(wait_condition)
