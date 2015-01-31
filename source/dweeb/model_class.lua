@@ -240,6 +240,10 @@ return class(function (model_class)
 		end)
 	end
 	
+	function model_class:define_property(name, getter, setter)
+		self.class_instance_factory.register_property(name, getter, setter)
+	end
+	
 	function model_class:define_method(name, fn)
 		self.class_instance_factory.register_constant(name, fn)
 	end
