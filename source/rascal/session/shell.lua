@@ -63,6 +63,8 @@ return class(function (shell)
 		self:display_commands()
 		while true do
 			io.write('shell> ')
+			io.flush()
+			
 			local input = io.read()
 			if not input then
 				break

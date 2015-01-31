@@ -151,7 +151,7 @@ return class(function (model_class)
 	
 	function model_class:iterate(where_fields)
 		-- either all or filtered, return an iterator (could optimise a pool for the nil where_fields case)
-		local db_iter = self.db:select(self.class_name, where_fields):query():rows()
+		local db_iter = self.db:select(self.class_name, '*', where_fields):query():rows()
 		local done = false
 		return function ()
 			if done then
@@ -242,6 +242,16 @@ return class(function (model_class)
 	
 	function model_class:define_method(name, fn)
 		self.class_instance_factory.register_constant(name, fn)
+	end
+	
+	function model_class:define_static_method(name, fn, proxy_self)
+		if proxy_self then
+			self[name] = function (model_class, ...)
+				return fn(proxy_self or model_class, ...)
+			end
+		else
+			self[name] = fn
+		end
 	end
 	
 	function model_class:define_view(name, definition, ...)
