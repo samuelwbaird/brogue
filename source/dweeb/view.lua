@@ -53,10 +53,12 @@ return class(function (view)
 
 		-- recurse remaining definitions
 		view:add_definitions(...)
+		return self
 	end
 	
 	function view:add_definition(name, source)
-		self.mappings:push({ name, source })		
+		self.mappings:push({ name, source })
+		return self		
 	end
 	
 	function view:externalise(obj, top_level_view) -- reference_stack
@@ -67,6 +69,7 @@ return class(function (view)
 			-- convert from source to value
 			local value
 			if type(source) == 'string' then
+				-- allow dot paths in name and colon method calls? eg. location:externalise
 				value = obj[source]
 			elseif type(source) == 'function' then
 				value = source(obj)
