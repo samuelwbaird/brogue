@@ -19,13 +19,14 @@ local model_instance_factory = require('dweeb.model_instance_factory')
 return class(function (model_class)
 	local super = model_class.new
 	
-	function model_class.new(model, class_name, indexed_fields, additional_indexes, cache_size)
+	function model_class.new(model, class_name, indexed_fields, additional_indexes, cache_size, on_inflate)
 		local self = super()
 		self.model = model
 		self.db = model.db
 		self.class_name = class_name
 		self.indexed_fields = indexed_fields
 		self.cache = cache(cache_size)
+		self.on_inflate = on_inflate
 		
 		-- prepare the DB
 		local columns = array({
@@ -85,6 +86,9 @@ return class(function (model_class)
 		latest_db_values.data = nil
 		instance = self.class_instance_factory(id, latest_db_values, data)
 		self.cache:push(id, instance)
+		if self.on_inflate then
+			self.on_inflate(instance, self.model)
+		end
 		return instance
 	end
 	
@@ -117,6 +121,9 @@ return class(function (model_class)
 		end
 		instance:dirty()
 		self.cache:push(id, instance)
+		if self.on_inflate then
+			self.on_inflate(instance, self.model)
+		end
 		return instance
 	end
 	

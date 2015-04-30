@@ -158,6 +158,7 @@ return module(function (model_instance_factory)
 
 				-- then check the adhoc data
 				local value = self.data[key]
+				
 				-- transparently & recursively inflate class+id into instances
 				if value then return inflate_value(value) end
 
