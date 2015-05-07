@@ -263,6 +263,17 @@ local function static(path, index_path, cache_size)
 	end
 end
 
+-- template, serve a file as a template, with request, context & response as available vars
+local function template(filename)
+	-- create an instance of the template handler
+	local template_handler = require('rascal.http.template_handler') (filename)
+
+	-- create a handler that serves static content
+	return function (request, context, response)
+		return template_handler:handle(request, context, response)
+	end
+end
+
 local function session(handler)
 	-- create a handler that wraps session cookie tracking
 	

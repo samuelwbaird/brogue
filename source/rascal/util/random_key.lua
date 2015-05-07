@@ -12,8 +12,8 @@ return module(function (random_key)
 	math.randomseed(os.time())
 	
 	
-	function random_key.printable(length)
-		local chars = '1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'	
+	function random_key.printable(length, chars)
+		chars = chars or '1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'	
 
 		local key = {}
 		while #key < length do
