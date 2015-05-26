@@ -142,6 +142,14 @@ return class(function (http_worker)
 		end
 	end
 	
+	-- remove any deferred entries with this key
+	function http_worker:clear_deferred(key)
+		local tokens = self.defer_signals:pull(key)
+		for _, token in ipairs(tokens) do
+			self.deferred_connections:clear(token)
+		end
+	end
+	
 	-- low level long polling
 	
 	-- support long polling, defer response until signalled
