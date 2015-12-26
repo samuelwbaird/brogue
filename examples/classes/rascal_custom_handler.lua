@@ -10,14 +10,7 @@ local class = require('core.class')
 local rascal = require('rascal.core')
 local html = require('rascal.util.html')
 
-return class(function (rascal_custom_handler)
-	local super = rascal_custom_handler.new
-	
-	function rascal_custom_handler.new()
-		local self = super()
-		return self
-	end
-	
+return class(function (rascal_custom_handler)	
 	function rascal_custom_handler:handle(request, context, response)
 		-- our custom handler respond with some dynamic content
 		response:set_mimetype_from_extension('html')
@@ -25,6 +18,8 @@ return class(function (rascal_custom_handler)
 		-- build an HTML document
 		local doc = html()
 		doc:add_h1('Unixtime Report')
+		
+		--doc:h1().text = 'testing'
 		
 		-- add atable
 		local t = doc:add_table()

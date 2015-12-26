@@ -6,22 +6,11 @@ local array = require('core.array')
 
 local dom_types = {}
 
-local function init_function(baseclass)
-	local super = baseclass.new
-	return function(...)
-		local self = super()
+-- base level class for any DOM node
+local node = class(function (node)		
+	function node:init(name)
 		self.children = array()
 		self.attributes = {}
-		self:init(...)
-		return self
-	end
-end
-
--- base level class for any DOM node
-local node = class(function (node)
-	node.new = init_function(node)
-	
-	function node:init(name, ...)
 		self.name = name
 	end
 	
@@ -99,12 +88,9 @@ end)
 
 -- create default types
 for _, nodename in ipairs({ 'tag', 'title', 'head', 'body', 'div', 'span', 'p', 'br', 'hr', 'script', 'img', 'html', 'table', 'tr', 'td', 'th', 'h1', 'h2', 'h3', 'h4', 'h5' }) do
-	dom_types[nodename] = class(function (nodetype)
-		nodetype.new = init_function(nodetype)
-		nodetype:mixin(node)
-		
+	dom_types[nodename] = class.derive(node, function (nodetype)
 		function nodetype:init(a1, a2)
-			self.name = nodename
+			node.init(self, nodename)
 			
 			if type(a1) == 'number' or type(a1) == 'boolean' then
 				a1 = tostring(a1)
@@ -141,7 +127,7 @@ for type, class in pairs(dom_types) do
 		-- find a given type or add it if required
 		class[other_type] = function (parent)
 			for _, child in ipairs(parent.children) do
-				if getmetatable(child) == other_class then
+				if other_class.is_member(child) then
 					return child
 				end
 			end
