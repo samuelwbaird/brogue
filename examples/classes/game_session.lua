@@ -4,6 +4,7 @@
 
 local class = require('core.class')
 local rascal = require('rascal.core')
+local session_client = require('rascal.session.session_client')
 local random_key = require('rascal.util.random_key')
 
 return class(function (game_session)
@@ -11,7 +12,7 @@ return class(function (game_session)
 	
 	function game_session.new()
 		local self = super()
-		self.session_server = rascal.registry:connect('rascal.session.api')
+		self.session_client = session_client()
 		return self
 	end
 	
@@ -25,7 +26,7 @@ return class(function (game_session)
 		-- if we have a session id, check if its valid
 		local session_data = nil
 		if session then
-			session_data = self.session_server:validate(session)
+			session_data = self.session_client:validate(session)
 		end
 		
 		-- if we have no session data then create a session
@@ -34,7 +35,7 @@ return class(function (game_session)
 				name = random_key.printable(4)
 			}
 			-- save the new session
-			local session_id = self.session_server:create(60 * 60 * 24, session_data)
+			local session_id = self.session_client:create(60 * 60 * 24, session_data)
 			
 			-- set the new cookie
 			response:set_header('Set-Cookie', 'session=' .. session_id .. '; Path=/;')

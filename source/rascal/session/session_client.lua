@@ -14,10 +14,10 @@ local cache = require('core.cache')
 
 local rascal = require('rascal.core')
 
-return class(function (session_cache)
-	local super = session_cache.new
+return class(function (session_client)
+	local super = session_client.new
 
-	function session_cache.new()
+	function session_client.new()
 		local self = super()
 		-- cache session info in each worker to reduce contention
 		self.cache = cache(1024 * 64)
@@ -28,17 +28,22 @@ return class(function (session_cache)
 		return self
 	end
 	
-	-- subscribe to updates from the main session_server
-	function session_cache:update(session_id, session_data)
-		self.cache:push(session_id, session_data)
-	end
-
-	function session_cache:expire(session_id)
-		self.cache:clear(session_id)
+	-- public api
+	
+	function session_client:create(ttl, session_data)
+		return self.session_api:create(ttl, session_data)
 	end
 	
-	-- proxy functions to the session server via the cache
-	function session_cache:validate(session_id)
+	function session_client:get(session_id)
+		return self.session_api:get(session_id)
+	end
+	
+	function session_client:set_session_data(session_id, session_data)
+		self.session_push:set_session_data(session_id, session_data)
+	end
+
+	-- proxy validations via the cache
+	function session_client:validate(session_id)
 		-- check if the session exists in cache
 		local session_data = self.cache:get(session_id)
 		if session_data then
@@ -53,6 +58,24 @@ return class(function (session_cache)
 			self.cache:push(session_id, session_data)
 		end
 		return session_data
+	end
+		
+	function session_client:set_value(session_id, key, value)
+		self.session_push:set_value(session_id, key, value)
+	end
+	
+	function session_client:extend(session_id, ttl)
+		self.session_push:extend(session_id, ttl)
+	end
+	
+	-- subscribe to updates from the main session_server to keep the cache fresh
+	
+	function session_client:update(session_id, session_data)
+		self.cache:push(session_id, session_data)
+	end
+
+	function session_client:expire(session_id)
+		self.cache:clear(session_id)
 	end
 
 end)

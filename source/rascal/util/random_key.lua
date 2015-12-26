@@ -11,7 +11,6 @@ local module = require('core.module')
 return module(function (random_key)
 	math.randomseed(os.time())
 	
-	
 	function random_key.printable(length, chars)
 		chars = chars or '1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'	
 
@@ -22,5 +21,15 @@ return module(function (random_key)
 		end
 		return table.concat(key)
 	end
+	
+	function random_key.unique_printable(unique_check, length, chars)
+		while true do
+			local key = random_key.printable(length, chars)
+			if unique_check(key) then
+				return key
+			end
+		end		
+	end
+	
 	
 end)

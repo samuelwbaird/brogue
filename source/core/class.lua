@@ -53,7 +53,7 @@ local function class(class_constructor)
 	
 	function meta.new(...)
 		local self = setmetatable({}, meta)
-		if self.init then
+		if meta.init then
 			return self:init(...) or self
 		else
 			return self
@@ -70,6 +70,7 @@ local function class(class_constructor)
 	if class_constructor then
 		class_constructor(meta)
 	end
+	
 	
 	return meta
 end

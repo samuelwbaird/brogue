@@ -1,7 +1,7 @@
 -- provides session data to be shared across http workers
 -- session data can be persisted with sqlite (or in-memory)
 -- provides expiry time with automatically extending ttl
--- works with session_cache to minimise coms
+-- works with session_client to minimise coms
 -- copyright 2014 Samuel Baird MIT Licence
 
 local math = require('math')
@@ -105,14 +105,9 @@ return class(function (session_server)
 	function session_server:create(ttl, session_data)
 		self.db:begin_transaction()
 		
-		local session_id = nil
-		while session_id == nil do
-			local key = random_key.printable(32)
-			if self.db_check_session_id:query({ key }):value() == 0 then
-				session_id = key
-				break
-			end
-		end
+		local session_id = random_key.unique_printable(function (key)
+			return self.db_check_session_id:query({ key }):value() == 0
+		end, 32)
 
 		-- prepare statement to insert new session
 		self.db_insert_session:execute({ session_id, cmsgpack.pack(session_data or {}), ttl, self:expiry(ttl) })
