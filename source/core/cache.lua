@@ -6,10 +6,8 @@
 local class = require('core.class')
 
 return class(function (cache)
-	local super = cache.new
-	
-	function cache.new(retain_size)
-		local self = super()
+
+	function cache:init(retain_size)
 		self.retain_size = tonumber(retain_size) or 0
 		-- weak cache of all values
 		self.weak = setmetatable({}, {
@@ -19,7 +17,6 @@ return class(function (cache)
 		-- this means double access is represented twice which might be good or bad
 		self.ring_buffer = {}
 		self.ring_buffer_index = 0
-		return self
 	end
 	
 	function cache:push(key, value)

@@ -11,23 +11,20 @@
 local class = require('core.class')
 local array = require('core.array')
 
-return class(function (mru)
-	local super = mru.new
-	
-	function mru.new(retain_size)
-		local self = super()
+return class(function (mmru)
+
+	function mmru:init(retain_size)
 		self.retain_size = tonumber(retain_size) or 1024
 		
-		-- hard mru, simple ring buffer for each access
+		-- hard mmru, simple ring buffer for each access
 		self.ring_buffer = {}
 		self.ring_buffer_index = 0
 		
 		-- reverse access from key to ring buffer entry
 		self.reverse = {}
-		return self
 	end
 	
-	function mru:push(key, value)
+	function mmru:push(key, value)
 		local return_value = nil
 		
 		-- set up the multiple list of entries for this key
@@ -76,7 +73,7 @@ return class(function (mru)
 	end
 	
 	-- get the value for a key
-	function mru:get(key)
+	function mmru:get(key)
 		local entries = self.reverse[key]
 		if entries then
 			local output = array()
@@ -90,7 +87,7 @@ return class(function (mru)
 	end
 	
 	-- get and clear
-	function mru:pull(key)
+	function mmru:pull(key)
 		local value = self:get(key)
 		if value then
 			self:clear(key)
@@ -99,7 +96,7 @@ return class(function (mru)
 	end
 	
 	-- remove the key and its entry
-	function mru:clear(key)
+	function mmru:clear(key)
 		local entries = self.reverse[key]
 		if entries then
 			self.reverse[key] = nil
@@ -109,8 +106,8 @@ return class(function (mru)
 		end
 	end
 	
-	mru.set = mru.push
-	mru.put = mru.push
-	mru.peek = mru.get
+	mmru.set = mmru.push
+	mmru.put = mmru.push
+	mmru.peek = mmru.get
 	
 end)

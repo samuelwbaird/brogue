@@ -12,10 +12,8 @@ local array = require('core.array')
 local parameter = require('rascal.proxy.parameter')
 
 return class(function (method)
-	local super = method.new
 	
-	function method.new(name, parameter_descriptions)
-		local self = super()
+	function method:init(name, parameter_descriptions)
 		self.name = name
 
 		-- split the string into parameters and return type
@@ -33,8 +31,6 @@ return class(function (method)
 			self.return_type = parameter('return:' .. return_part)
 		end
 		self.void = (self.return_type == nil)
-		
-		return self
 	end
 	
 end)

@@ -11,17 +11,14 @@
 local class = require('core.class')
 
 return class(function (mru)
-	local super = mru.new
-	
-	function mru.new(retain_size)
-		local self = super()
+
+	function mru:init(retain_size)
 		self.retain_size = tonumber(retain_size) or 1024
 		-- hard mru, simple ring buffer for each access
 		self.ring_buffer = {}
 		self.ring_buffer_index = 0
 		-- reverse access from key to ring buffer entry
 		self.reverse = {}
-		return self
 	end
 	
 	function mru:push(key, value)

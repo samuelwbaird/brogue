@@ -14,10 +14,8 @@ local array = require('core.array')
 
 
 return class(function (request)
-	local super = request.new
 	
-	function request.new(request_string)
-		local self = super()
+	function request:init(request_string)
 		self.headers = {}
 		
 		self.time = os.time()
@@ -65,8 +63,6 @@ return class(function (request)
 				self.url_vars = request.query_vars(self.url_query)
 			end
 		end
-		
-		return self
 	end
 	
 	function request:reset()

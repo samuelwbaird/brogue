@@ -6,13 +6,10 @@ local class = require('core.class')
 local rascal = require('rascal.core')
 
 return class(function (cookie_session)
-	local super = cookie_session.new
 	
-	function cookie_session.new(timeout_seconds, session_api_endpoint)
-		local self = super()
+	function cookie_session:init(timeout_seconds, session_api_endpoint)
 		self.timeout_seconds = timeout_seconds or (60 * 60 * 24)
 		self.session_server = rascal.registry:connect(session_api_endpoint or 'rascal.session.api')
-		return self
 	end
 	
 	function cookie_session:handle(request, context, response)

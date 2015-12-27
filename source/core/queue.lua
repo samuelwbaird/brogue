@@ -7,13 +7,10 @@ local class = require("core.class")
 local pairs, ipairs = pairs, ipairs
 
 return class(function (queue)
-	local super = queue.new
 	
-	function queue.new()
-		local self = super()
+	function queue:init()
 		self.head = nil
 		self.tail = nil
-		return self
 	end
 	
 	-- push an item to the end of the queue

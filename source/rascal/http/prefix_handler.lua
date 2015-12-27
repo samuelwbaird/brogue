@@ -10,12 +10,9 @@ local class = require('core.class')
 local array = require('core.array')
 
 return class(function (prefix)
-	local super = prefix.new
 
-	function prefix.new(url_prefix)
-		local self = super()
+	function prefix:init(url_prefix)
 		self.url_prefix = url_prefix
-		return self
 	end
 	
 	function prefix:handle(request, context, response)

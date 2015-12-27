@@ -8,10 +8,8 @@ require('rascal.base')
 local class = require('core.class')
 
 return class(function (thread_semaphore)
-	local super = thread_semaphore.new
 	
-	function thread_semaphore.new(channel)
-		local self = super()
+	function thread_semaphore:init(channel)
 		self.channel = channel
 		self.ids = {}
 		self.pull_socket = ctx:socket(zmq.PULL)
@@ -23,7 +21,6 @@ return class(function (thread_semaphore)
 				self.ids[value] = value
 			end
 		end)
-		return self
 	end
 	
 	function thread_semaphore:wait(id, clear_first)

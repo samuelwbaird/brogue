@@ -7,12 +7,9 @@ local class = require('core.class')
 local array = require('core.array')
 
 return class(function (chain)
-	local super = chain.new
 	
-	function chain.new(objects)
-		local self = super()
+	function chain:init(objects)
 		self.objects = objects
-		return self
 	end
 	
 	function chain:add(obj)

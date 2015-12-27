@@ -62,16 +62,10 @@ return class(function (registry)
 		return proxy_aggregate({ push_client, req_client })
 	end
 	
-	local super = registry.new
-	
-	function registry.new()
-		local self = super()
-		
+	function registry:init()
 		self.registry_values = {}
 		self.key_clients = {}
 		self.router = nil
-
-		return self
 	end
 	
 	function registry:queue_for_key(key)

@@ -6,10 +6,8 @@ local class = require('core.class')
 local array = require('core.array')
 
 return class(function (decorator)
-	local super = decorator.new
-	
-	function decorator.new(properties)
-		local self = super()
+
+	function decorator:init(properties)
 		self.properties = {}
 		
 		if properties then
@@ -45,8 +43,6 @@ return class(function (decorator)
 				end
 			end,
 		}
-		
-		return self
 	end
 	
 	function decorator:set_value(key, value)

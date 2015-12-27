@@ -10,12 +10,9 @@ local class = require('core.class')
 local array = require('core.array')
 
 return class(function (equal)
-	local super = equal.new
 
-	function equal.new(url_path)
-		local self = super()
+	function equal:init(url_path)
 		self.url_path = url_path
-		return self
 	end
 	
 	function equal:handle(request, context, response)

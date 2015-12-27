@@ -15,14 +15,10 @@ local model_class = require('dweeb.model_class')
 
 return class(function (model)
 	
-	local super = model.new
-	
-	function model.new(db_name)
-		local self = super()
+	function model:init(db_name)
 		self.db = assert(sqlite(db_name, true))
 		self.classes = {}
 		self.in_transaction = false
-		return self
 	end
 	
 	-- top level manage the data

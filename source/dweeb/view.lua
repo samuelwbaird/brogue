@@ -18,13 +18,10 @@ local array = require('core.array')
 local cache = require('core.cache')
 
 return class(function (view)
-	local super = view.new
 	
-	function view.new(...)
-		local self = super()
+	function view:init(...)
 		self.mappings = array()
 		self:add_definitions(...)
-		return self
 	end
 	
 	-- add definitions

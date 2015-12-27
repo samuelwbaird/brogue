@@ -68,18 +68,12 @@ return module(function (model_instance_factory)
 		local properties = {}
 
 		return class(function (instance)
-			local super = instance.new
-			
 			instance.model_class = model_class
 
-			function instance.new(id, indexed_field_values, data_values)
-				local self = super()
-
+			function instance:init(id, indexed_field_values, data_values)
 				rawset(self, 'id', id)
 				rawset(self, 'indexed_fields', clone(indexed_field_values))
 				rawset(self, 'data', clone(data_values))			
-
-				return self
 			end
 
 			function instance:flatten()

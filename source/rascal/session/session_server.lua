@@ -16,7 +16,6 @@ local sqlite = require('dweeb.sqlite')
 local random_key = require('rascal.util.random_key')
 
 return class(function (session_server)
-	local super = session_server.new
 
 	session_server.api_description = {
 		create = 'ttl:int, data:*:optional -> session_id',
@@ -35,9 +34,7 @@ return class(function (session_server)
 		expire = 'session_id',
 	}
 	
-	function session_server.new(db_name, post_channel, api_channel, pub_channel)
-		local self = super()
-		
+	function session_server:init(db_name, post_channel, api_channel, pub_channel)
 		math.randomseed(os.time())
 		self.last_purge = nil
 		
@@ -78,8 +75,6 @@ return class(function (session_server)
 		
 		self.db_set_session_expiry = self.db:update('session', { 'expiry' }, { 'session_id' }):prepare()
 		self.db_set_session_data = self.db:update('session', { 'session_data' }, { 'session_id' }):prepare()
-		
-		return self
 	end	
 	
 	-- internal

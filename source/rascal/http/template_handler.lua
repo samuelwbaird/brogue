@@ -9,13 +9,10 @@ local template = require('rascal.util.template')
 require('rascal.base')
 
 return class(function (static)
-	local super = static.new
 
-	function static.new(filename, extension)
-		local self = super()
+	function static:init(filename, extension)
 		self.extension = extension or 'html'
 		self.template = template.from_file(filename)
-		return self
 	end
 	
 	function static:handle(request, context, response)

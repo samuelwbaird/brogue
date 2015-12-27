@@ -17,10 +17,8 @@ local view = require('dweeb.view')
 local model_instance_factory = require('dweeb.model_instance_factory')
 
 return class(function (model_class)
-	local super = model_class.new
 	
-	function model_class.new(model, class_name, indexed_fields, additional_indexes, cache_size, on_inflate)
-		local self = super()
+	function model_class:init(model, class_name, indexed_fields, additional_indexes, cache_size, on_inflate)
 		self.model = model
 		self.db = model.db
 		self.class_name = class_name
@@ -65,8 +63,6 @@ return class(function (model_class)
 				self.class_instance_factory.register_index(k)
 			end
 		end
-		
-		return self
 	end
 	
 	function model_class:is_field_indexed(field_name)

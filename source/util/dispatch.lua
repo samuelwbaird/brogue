@@ -16,18 +16,14 @@ local array = require('core.array')
 -- efficient reverse indexing might be good too
 
 local update_set = class(function (update_set)
-	local super = update_set.new
-
-	function update_set.new(update_function)
-		local self = super()
+	
+	function update_set:init(update_function)
 		self.update_function = update_function
 		
 		self.is_updating = false
 		self.has_removals = false
 		self.set = {}
 		self.remove_set = {}
-		
-		return self
 	end
 	
 	function update_set:add(obj, tag)
@@ -132,12 +128,9 @@ end)
 
 -- dispatch
 local dispatch = class(function (dispatch)
-	local super = dispatch.new
 	
-	function dispatch.new()
-		local self = super()
+	function dispatch:init()
 		self.update_set = update_set()
-		return self
 	end
 	
 	-- call in this many steps/ticks/frames
@@ -231,8 +224,6 @@ end)
 
 -- threads added to the weave are wrapped in this class
 local thread = class(function (thread)
-	local super = thread.new
-	
 	-- lazily created dispatch objects
 	thread:lazy({
 		on_update = function () return dispatch() end,
@@ -241,8 +232,7 @@ local thread = class(function (thread)
 		on_exit = function () return dispatch() end,
 	})
 	
-	function thread.new(weave, tag, thread_function, ...)
-		local self = super()
+	function thread:init(weave, tag, thread_function, ...)
 		self.weave = weave
 		self.tag = tag
 		
@@ -273,8 +263,6 @@ local thread = class(function (thread)
 		
 		-- create the co-routine
 		self:execute(thread_function, ...)
-		
-		return self
 	end
 	
 	function thread:suspend()
@@ -393,18 +381,13 @@ end)
 
 -- the weave class manages a bunch of threads
 local weave = class(function (weave)
-	local super = weave.new
 	
-	function weave.new(environment)
-		local self = super()
-		
+	function weave:init(environment)
 		self.shared_globals = {}
 		setmetatable(self.shared_globals, { __index = environment or _G })
 		
 		self.update_set = update_set()
 		self.suspend_set = update_set()
-		
-		return self
 	end
 	
 	-- new, suspend, resume

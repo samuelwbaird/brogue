@@ -10,10 +10,8 @@ local class = require('core.class')
 local array = require('core.array')
 
 return class(function (ttl_cache)
-	local super = ttl_cache.new
 	
-	function ttl_cache.new(default_ttl)
-		local self = super()
+	function ttl_cache:init(default_ttl)
 		self.default_ttl = default_ttl or 0
 		
 		-- ttl buckets by tick
@@ -22,8 +20,6 @@ return class(function (ttl_cache)
 		
 		-- reference a value back to its bucket
 		self.reverse = {}
-		
-		return self
 	end
 	
 	function ttl_cache:get_bucket(ttl)

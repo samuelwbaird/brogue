@@ -12,10 +12,8 @@ local array = require('core.array')
 local method = require('rascal.proxy.method')
 
 return class(function (api)
-	local super = api.new
 	
-	function api.new(api_description)
-		local self = super()
+	function api:init(api_description)
 		self.methods = array()
 		self.method = {}
 		
@@ -24,8 +22,6 @@ return class(function (api)
 			self.method[method_name] = m
 			self.methods:push(m)
 		end
-		
-		return self
 	end
 	
 end)

@@ -37,11 +37,8 @@ function pretty(value)
 end
 
 return class(function (shell)
-	local super = shell.new
 
-	function shell.new(services)
-		local self = super()
-		
+	function shell:init(services)
 		self.proxies = array()
 		for _, service in ipairs(services) do
 			local proxy = rascal.registry:connect(service)
@@ -55,8 +52,6 @@ return class(function (shell)
 				end
 			end
 		end
-		
-		return self
 	end	
 	
 	function shell:loop()

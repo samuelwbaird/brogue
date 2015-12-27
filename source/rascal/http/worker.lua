@@ -14,8 +14,8 @@ local os = require('os')
 
 -- core modules
 local class = require('core.class')
-local mru = require('core.mru')
-local mtm = require('core.mtm')
+local mtm = require('util.mtm')
+local mru = require('util.mru')
 
 -- normally runs as a rascal thread
 local rascal = require('rascal.core')
@@ -23,11 +23,8 @@ local http_request = require('rascal.http.request')
 local http_response = require('rascal.http.response')
 
 return class(function (http_worker)
-	local super = http_worker.new
 	
-	function http_worker.new(configuration, worker_request_address, push_reply_address, worker_identity)
-		local self = super()
-		
+	function http_worker:init(configuration, worker_request_address, push_reply_address, worker_identity)
 		-- a worker runs in its own thread, 1 worker per thread, make itself globally accessible
 		worker = self		
 		
@@ -75,8 +72,6 @@ return class(function (http_worker)
 			-- tell the worker we're ready for more work
 			request_from_router:send('ready')
 		end)
-		
-		return self
 	end
 
 	function http_worker:handle_request(request, context, response)

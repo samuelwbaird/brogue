@@ -23,10 +23,8 @@ require('rascal.base')
 local api = require('rascal.proxy.api')
 
 return class(function (proxy)
-	local super = proxy.new
 	
-	function proxy.new(channel, socket_type, api_description)
-		local self = super()
+	function proxy:init(channel, socket_type, api_description)
 		-- prep the coms
 		self.channel = channel
 		self.socket_type = socket_type
@@ -39,7 +37,6 @@ return class(function (proxy)
 		end
 		self.api = api
 		self.api_description = api_description
-		return self
 	end
 	
 	function proxy.create_proxy_method(name, socket_type, method)

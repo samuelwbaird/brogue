@@ -10,12 +10,9 @@ local class = require('core.class')
 local array = require('core.array')
 
 return class(function (match)
-	local super = match.new
 
-	function match.new(url_match)
-		local self = super()
+	function match:init(url_match)
 		self.url_match = url_match
-		return self
 	end
 	
 	function match:handle(request, context, response)

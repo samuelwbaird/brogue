@@ -15,10 +15,8 @@ local cache = require('core.cache')
 require('rascal.base')
 
 return class(function (static)
-	local super = static.new
 
-	function static.new(path, index_path, cache_size)
-		local self = super()
+	function static:init(path, index_path, cache_size)
 		self.path = path
 		self.index_path = index_path
 		if type(cache_size) == 'boolean' and cache_size == false then
@@ -26,7 +24,6 @@ return class(function (static)
 		else
 			self.cache = cache(cache_size)
 		end
-		return self
 	end
 	
 	function static:handle(request, context, response)

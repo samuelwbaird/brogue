@@ -15,16 +15,13 @@ local class = require('core.class')
 local array = require('core.array')
 
 return class(function (response)
-	local super = response.new
 	
-	function response.new(request)
-		local self = super()
+	function response:init(request)
 		self.status_code = 200
 		self.keep_alive = request and request.should_keep_alive or false
 		self.headers = {
 		}
 		self.body = nil
-		return self
 	end
 	
 	function response:set_status(status_code)

@@ -7,11 +7,8 @@
 local class = require('core.class')
 
 return class(function (parameter)
-	local super = parameter.new
 	
-	function parameter.new(parameter_description)
-		local self = super()
-
+	function parameter:init(parameter_description)
 		-- split into name + qualifiers
 		local name_part, qualifiers_part = parameter_description:match('^(.-)%s*%:%s*(.+)$')
 		if not name_part then
@@ -27,8 +24,6 @@ return class(function (parameter)
 		for qualifier in qualifiers_part:gmatch('%s*([^%:]+)%s*%:?%s*') do
 			self.qualifiers[qualifier] = qualifier
 		end
-		
-		return self
 	end
 	
 end)

@@ -15,10 +15,8 @@ local class = require('core.class')
 local array = require('core.array')
 
 return class(function (mtm)
-	local super = mtm.new
 	
-	function mtm.new(weak)
-		local self = super()
+	function mtm:init(weak)
 		self.by_key = {}
 		self.by_value = {}
 		self.weak = weak
@@ -30,7 +28,6 @@ return class(function (mtm)
 				__mode = 'k'
 			})
 		end
-		return self
 	end
 	
 	-- internal operations -----------------

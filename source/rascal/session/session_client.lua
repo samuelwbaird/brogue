@@ -15,17 +15,14 @@ local cache = require('core.cache')
 local rascal = require('rascal.core')
 
 return class(function (session_client)
-	local super = session_client.new
 
-	function session_client.new()
-		local self = super()
+	function session_client:init()
 		-- cache session info in each worker to reduce contention
 		self.cache = cache(1024 * 64)
 		-- connect to the real session server as required
 		self.session_api = rascal.registry:connect('rascal.session.api')
 		self.session_push = rascal.registry:connect('rascal.session.push')
 		self.session_sub = rascal.registry:connect_sub('rascal.session.pub', self)
-		return self
 	end
 	
 	-- public api

@@ -22,10 +22,8 @@ local api = require('rascal.proxy.api')
 local client = require('rascal.proxy.client')
 
 return class(function (proxy)
-	local super = proxy.new
 
-	function proxy.new(target, api_description, channel, socket_type, publish_service_id)
-		local self = super()
+	function proxy:init(target, api_description, channel, socket_type, publish_service_id)
 		self.target = target
 		self.api_description = api_description
 		self.channel = channel
@@ -53,7 +51,6 @@ return class(function (proxy)
 		if publish_service_id then
 			self:publish(publish_service_id)
 		end
-		return self
 	end
 	
 	function proxy:publish(publish_service_id, publish_socket_type)

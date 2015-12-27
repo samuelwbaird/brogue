@@ -162,6 +162,40 @@ return class(function (array)
 		return self
 	end
 
+	-- return a coroutine that will iterate through all permutations of array ordering
+	function array:permutations()
+		return coroutine.wrap(function()
+			if #self == 1 then
+				coroutine.yield(self);
+			else
+				-- permutation is equal to an element in each position, with all permutations of the other elements before and after
+				local element = self[1]
+				local the_rest = self:clone()
+				the_rest:remove(1)
+
+				for sub_permutation in the_rest:permutations() do
+					for insert_index = 1, #sub_permutation + 1 do
+						local permutation = sub_permutation:clone()
+						permutation:insert(insert_index, element)
+						coroutine.yield(permutation)
+					end
+				end
+			end
+			coroutine.yield(nil)
+		end)
+	end
+	
+	function array:random_permutation()
+		local out = array.new()
+		local working = self:clone()
+		while #working > 0 do
+			local random_index = math.random(1, #working)
+			out:push(working[random_index])
+			working:remove(random_index)
+		end
+		return out
+	end
+
 	-- aliases
 	array.add = array.push_back
 	array.push = array.push_back

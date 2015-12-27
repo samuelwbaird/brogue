@@ -15,16 +15,13 @@ local array = require('core.array')
 local cache = require('core.cache')
 
 local result = class(function (result)
-	local super = result.new
-	
-	function result.new(statement, sqlite_statement, sql_string)
-		local self = super()
+
+	function result:init(statement, sqlite_statement, sql_string)
 		self.statement = statement
 		self.sqlite_statement = sqlite_statement
 		self.sql_string = sql_string
 		-- pre-emptively step and see if its ok?
 		self:step()
-		return self
 	end
 	
 	function result:step()
@@ -131,14 +128,11 @@ local result = class(function (result)
 end)
 
 local statement = class(function (statement)
-	local super = statement.new
 	
-	function statement.new(sqlite_statement, sql_string, db)
-		local self = super()
+	function statement:init(sqlite_statement, sql_string, db)
 		self.sqlite_statement = sqlite_statement
 		self.sql_string = sql_string
 		self.db = db
-		return self
 	end
 
 	function statement:bind(bindings)
@@ -173,14 +167,11 @@ end)
 
 -- a pool for the same SQL query
 local statement_pool = class(function (statement_pool)
-	local super = statement_pool.new
 	
-	function statement_pool.new(db, sql_string)
-		local self = super()
+	function statement_pool:init(db, sql_string)
 		self.db = db
 		self.sql_string = sql_string
 		self.waiting = {}
-		return self
 	end
 	
 	function statement_pool:acquire(bindings)
@@ -211,14 +202,11 @@ local statement_pool = class(function (statement_pool)
 end)
 
 local builder = class(function (builder)
-	local super = builder.new
 	
-	function builder.new(db)
-		local self = super()
+	function builder:init(db)
 		self.db = db
 		self.clauses = array()
 		self.bindings = nil
-		return self
 	end
 	
 	-- get bindings and return field name and standins
@@ -374,10 +362,8 @@ local builder = class(function (builder)
 end)
 
 local db = class(function (db)
-	local super = db.new
 	
-	function db.new(filename, exclusive)
-		local self = super()
+	function db:init(filename, exclusive)
 		if filename then
 			self.sqlite = sql.open(filename)
 			if exclusive then
@@ -390,7 +376,6 @@ local db = class(function (db)
 		self.in_transaction = false
 		self.pools = {}
 		-- maintainance self:execute('VACUUM')
-		return self
 	end
 
 	function db:close()

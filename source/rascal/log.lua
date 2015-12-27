@@ -30,13 +30,9 @@ return class(function (log)
 		return proxy_client(push_channel, zmq.PUSH, log.api_description)
 	end
 	
-	local super = log.new
-	
-	function log.new()
-		local self = super()
+	function log:init()
 		self.console = true
 		self.file = nil
-		return self
 	end
 
 	function log:log_to_console(enable)
