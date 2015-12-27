@@ -76,19 +76,11 @@ return module(function (template)
 	
 		local code = array()
 		-- begin with a preamble to allow read but not write to the global name table
-		-- write all the input fields into this temporary global table
+		-- chain all tables supplied as input before reads to global
 		code:push('local input = (...) or {}')
-		code:push('local chain = require(\'core.chain\')')
-		code:push('if #input > 0 then')
-		code:push('	input = chain(input)')
-		code:push('	input:add(_G)')
-		code:push('elseif getmetatable(input) then')
-		code:push('	input = chain({ input })')
-		code:push('	input:add(_G)')
-		code:push('else')
-		code:push('	setmetatable(input, { __index = _G })')
-		code:push('end')
-		code:push('setfenv(1, input)')
+		-- allow the template to read from any supplied input tables and global
+		code:push('local meta = require(\'core.meta\')')
+		code:push('setfenv(1, meta.chain(input, _G))')
 		code:push('')
 		
 		-- include a function that can write output for this template
