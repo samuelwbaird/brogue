@@ -2,6 +2,14 @@
 -- copyright 2014 Samuel Baird MIT Licence
 
 local module_constructor_functions = {
+	mixin = function (module, other_module)
+		-- "inherit" the values if applicable
+		for k, v in pairs(other_module) do
+			if self[k] == nil then
+				self[k] = v
+			end
+		end
+	end
 }
 
 local function module(module_constructor, ...)
