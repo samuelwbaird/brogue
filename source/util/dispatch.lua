@@ -225,12 +225,10 @@ end)
 -- threads added to the weave are wrapped in this class
 local thread = class(function (thread)
 	-- lazily created dispatch objects
-	thread:lazy({
-		on_update = function () return dispatch() end,
-		on_suspend = function () return dispatch() end,
-		on_resume = function () return dispatch() end,
-		on_exit = function () return dispatch() end,
-	})
+	thread:add_lazy_property('on_update', dispatch)
+	thread:add_lazy_property('on_suspend', dispatch)
+	thread:add_lazy_property('on_resume', dispatch)
+	thread:add_lazy_property('on_exit', dispatch)
 	
 	function thread:init(weave, tag, thread_function, ...)
 		self.weave = weave

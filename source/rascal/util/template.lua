@@ -80,7 +80,7 @@ return module(function (template)
 		code:push('local input = (...) or {}')
 		-- allow the template to read from any supplied input tables and global
 		code:push('local meta = require(\'core.meta\')')
-		code:push('setfenv(1, meta.chain(input, _G))')
+		code:push('setfenv(1, meta.read_proxy_chain(input, _G))')
 		code:push('')
 		
 		-- include a function that can write output for this template

@@ -127,7 +127,7 @@ for type, class in pairs(dom_types) do
 		-- find a given type or add it if required
 		class[other_type] = function (parent)
 			for _, child in ipairs(parent.children) do
-				if other_class.is_member(child) then
+				if other_class.has_instance(child) then
 					return child
 				end
 			end

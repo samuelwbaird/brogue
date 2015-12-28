@@ -2,77 +2,155 @@
 -- no inheritance, data hiding built in
 -- copyright 2014 Samuel Baird MIT Licence
 
+local meta = require('core.meta')
+
 local class_meta = {
 	-- constructor callable directly off the class
 	__call = function(class, ...)
 		return class.new(...)
 	end,
-	-- class static meta methods
+	-- shared class static methods
 	__index = {
+		-- copy the methods/values of another class
 		mixin = function (self, other_class)
-			-- "inherit" the values if applicable
 			for k, v in pairs(other_class) do
 				if self[k] == nil then
 					self[k] = v
 				end
 			end
 		end,
+
+		-- enable the full functionality index metamethod if it is required for this class
+		enable_full_index = function (class)
+			if class.__index == class then
+				class.__index = class.__fullindex
+			elseif class.__index == class.__fullindex then
+				-- nothing to do
+			else
+				error('cannot enable full index metamethod after override', 3)
+			end		
+		end,
 		
-		-- lazily construct some properties
-		lazy = function (class, lazy_property_constructors)
-			-- replace the class __index with an interceptor to create lazy properties as required
-			local old_index = class.__index
-			class.__index = function (obj, name)
-				-- intersect with lazy constructor
-				if lazy_property_constructors[name] then
-					local val = lazy_property_constructors[name]()
-					rawset(obj, name, val)
-					return val
-				end
-				if old_index then
-					if type(old_index) == "table" then
-						-- delegate to prior table and promote
-						local val = old_index[name]
-						if val then
-							rawset(obj, name, val)
-						end
-						return val
-					else
-						-- must be a function
-						old_index(obj, name)
-					end
-				end
-			end
+		-- enable the full functionality newindex metamethod if it is required for this class
+		enable_full_newindex = function (class)
+			if class.__newindex == nil then
+				class.__newindex = class.__fullnewindex
+			elseif class.__newindex == class.__fullnewindex then
+				-- nothing to do
+			else
+				error('cannot enable full newindex metamethod after override', 3)
+			end		
+		end,
+		
+		-- add a property, optional getter and setter
+		-- getter (obj) -> value
+		-- setter (obj, value) -> void
+		add_property = function (class, name, getter, setter)
+			class:enable_full_index()
+			class:enable_full_newindex()
+			class._properties[name] = {
+				getter = getter,
+				setter = setter,
+			}
+		end,
+
+		-- add a property that is inflated or created the first time it is read
+		add_lazy_property = function (class, name, inflater)
+			class:enable_full_index()
+			class._properties[name] = {
+				getter = function (obj)
+					-- inflate and set this as a simple value from now on
+					local value = inflater()
+					rawset(obj, name, value)
+					return value
+				end,
+				setter = nil,
+			}
+		end,
+		
+		-- make this class strict, reads from unknown properties are errors
+		strict = function (class)
+			class:enable_full_index()
+			class._strict = true
+		end,
+
+		-- make this class sealed, writes to unknown properties are errors (use rawset for private/internal rights)
+		seal = function (class)
+			class:enable_full_newindex()
+			class._sealed = true
 		end,
 	}
 }
 
 local function class(class_constructor)
-	local meta = {}
-	meta.__index = meta
+	local class = {}
+	setmetatable(class, class_meta)
+
+	-- by default supply lightweight meta methods
+	class.__index = class
+	class.__newindex = nil
+
+	-- if the class uses particular features these full meta method might be required
+	class._properties = {}
+	class._sealed = false
+	class._strict = false
+	function class.__fullindex(object, property)
+		-- check for property value or getters
+		local prop = class._properties[property]
+		if prop then
+			if prop.getter then
+				return prop.getter(object)
+			else
+				error('property ' .. tostring(property) .. ' cannot be read', 2)
+			end
+		end
+		-- otherwise allow default behaviour
+		local value = class[property]
+		-- handle strict
+		if not value and class._strict then
+		 	error('cannot read unknown property ' .. tostring(property) .. ' class is strict', 2)
+		end
+		return value
+	end
+	function class.__fullnewindex(object, property, value)
+		-- check for property setters
+		-- check for property value or getters
+		local prop = class._properties[property]
+		if prop then
+			if prop.setter then
+				return prop.setter(object, value)
+			else
+				error('property ' .. tostring(property) .. ' cannot be set', 2)
+			end
+		end
+		-- handle sealed
+		if class._sealed then
+		 	error('cannot set property ' .. tostring(property) .. ' class is sealed', 2)
+		end
+		-- otherwise allow default behaviour
+		rawset(object, property, value)
+	end
 	
-	function meta.new(...)
-		local self = setmetatable({}, meta)
-		if meta.init then
+	-- class specific methods
+	function class.new(...)
+		local self = setmetatable({}, class)
+		if class.init then
 			return self:init(...) or self
 		else
 			return self
 		end
 	end
-	
-	function meta.is_member(obj)
-		return obj and getmetatable(obj) == meta
-	end
-	
-	setmetatable(meta, class_meta)
 
-	-- define this class
+	function class.has_instance(obj)
+		return obj and getmetatable(obj) == class
+	end
+
+	-- let the caller define this class
 	if class_constructor then
-		class_constructor(meta)
+		class_constructor(class)
 	end
 	
-	
-	return meta
+	return class
 end
 
 local function derive(base, class_constructor)
@@ -120,4 +198,4 @@ local function package(publish_these_classes_and_functions, default_constructor)
 	return publish
 end
 
-return setmetatable({ new = class, derive = derive, package = package }, class_meta)
+return package({ new = class, class = class, derive = derive, package = package }, class)
