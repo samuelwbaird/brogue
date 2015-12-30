@@ -14,8 +14,21 @@ local class_meta = {
 		-- copy the methods/values of another class
 		mixin = function (self, other_class)
 			for k, v in pairs(other_class) do
-				if self[k] == nil then
-					self[k] = v
+				if k ~= '__newindex' then
+					if self[k] == nil then
+						self[k] = v
+					end
+				end
+			end
+			-- copy in property functionality if present
+			if next(other_class._properties) then
+				self:enable_full_index()
+				self:enable_full_newindex()
+			end
+			-- merge property list
+			for k, v in pairs(other_class._properties) do
+				if self._properties[k] == nil then
+					self._properties[k] = v
 				end
 			end
 		end,

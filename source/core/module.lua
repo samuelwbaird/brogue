@@ -5,8 +5,8 @@ local module_constructor_functions = {
 	mixin = function (module, other_module)
 		-- "inherit" the values if applicable
 		for k, v in pairs(other_module) do
-			if self[k] == nil then
-				self[k] = v
+			if module[k] == nil then
+				module[k] = v
 			end
 		end
 	end
