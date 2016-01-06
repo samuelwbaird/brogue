@@ -39,6 +39,15 @@ return class(function (cache)
 		return value
 	end
 	
+	function cache:get_or_set(key, create_function, ...)
+		local value = self.weak[key]
+		if value then
+			self:retain(key, value)
+			return value
+		end
+		return self:push(key, create_function(...))
+	end
+	
 	function cache:peek(key)
 		return self.weak[key]
 	end

@@ -140,7 +140,7 @@ return class(function (array)
 	function array:remove_element(element, more_than_once)
 		for i, v in ipairs(self) do
 			if v == element then
-				table.remove(self.actions, i)
+				table.remove(self, i)
 				if not more_than_once then
 					return;
 				end

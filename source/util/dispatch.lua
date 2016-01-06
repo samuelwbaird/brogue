@@ -12,7 +12,7 @@ local array = require('core.array')
 -- update set, call update on each object, returning true
 -- means this object is finished and should be removed from the update set
 -- all update objects can also be tagged, and removed by tag
--- needs to handle update during iteration
+-- handle update during iteration
 -- efficient reverse indexing might be good too
 
 local update_set = class(function (update_set)
@@ -95,16 +95,21 @@ local update_set = class(function (update_set)
 	end
 	
 	function update_set:remove(tag_or_obj)
+		local did_remove_objects = false
+		
 		for _, entry in ipairs(self.set) do
 			if entry[1] == tag_or_obj or entry[2] == tag_or_obj then
 				self.has_removals = true
 				self.remove_set[entry] = true
+				did_remove_objects = true
 			end
 		end
 		
-		if not self.is_updating and self.has_removals then
+		if did_remove_objects and not self.is_updating and self.has_removals then
 			self:do_removals()
 		end
+		
+		return did_remove_objects
 	end
 	
 	function update_set:is_empty()
