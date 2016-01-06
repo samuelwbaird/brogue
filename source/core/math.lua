@@ -1,5 +1,5 @@
 -- extend the built in math module with more functions
--- copyright 2014 Samuel Baird MIT Licence
+-- copyright 2016 Samuel Baird MIT Licence
 
 local lua_math = require('math')
 local module = require('core.module')

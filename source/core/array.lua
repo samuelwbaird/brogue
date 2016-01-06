@@ -1,5 +1,5 @@
 -- module to give array tables some standard convenience functions
--- copyright 2014 Samuel Baird MIT Licence
+-- copyright 2016 Samuel Baird MIT Licence
 
 local table = require("table")
 local math = require("math")

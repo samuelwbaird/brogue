@@ -2,7 +2,7 @@
 -- ttl measured in discrete ticks rather than quantities of time
 -- tick the cache at whatever interval is required
 -- access is bucketed for each tick (coarse grained)
--- copyright 2014 Samuel Baird MIT Licence
+-- copyright 2016 Samuel Baird MIT Licence
 
 local math = require('math')
 

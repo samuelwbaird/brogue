@@ -1,5 +1,5 @@
 -- common metatable patterns and functionality
--- copyright 2014 Samuel Baird MIT Licence
+-- copyright 2016 Samuel Baird MIT Licence
 
 local module = require('core.module')
 

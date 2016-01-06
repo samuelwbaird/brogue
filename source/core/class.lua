@@ -1,6 +1,6 @@
 -- convention around creating simple metatable class types
 -- no inheritance, data hiding built in
--- copyright 2014 Samuel Baird MIT Licence
+-- copyright 2016 Samuel Baird MIT Licence
 
 local meta = require('core.meta')
 

@@ -1,6 +1,6 @@
 -- fifo queue
 -- based on a link list of pairs
--- copyright 2014 Samuel Baird MIT Licence
+-- copyright 2016 Samuel Baird MIT Licence
 
 local class = require("core.class")
 

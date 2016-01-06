@@ -1,7 +1,7 @@
 -- simple cache module based on a ring buffer
 -- most basic approach, double entries are not collated
 -- weak references are reused until collected
--- copyright 2014 Samuel Baird MIT Licence
+-- copyright 2016 Samuel Baird MIT Licence
 
 local class = require('core.class')
 

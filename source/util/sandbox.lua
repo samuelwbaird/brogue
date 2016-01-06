@@ -1,3 +1,6 @@
+-- module to help run sandboxed code
+-- copyright 2016 Samuel Baird MIT Licence
+
 local class = require('core.class')
 
 return class(function (sandbox)

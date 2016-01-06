@@ -1,5 +1,5 @@
 -- convention around creating modules
--- copyright 2014 Samuel Baird MIT Licence
+-- copyright 2016 Samuel Baird MIT Licence
 
 local module_constructor_functions = {
 	mixin = function (module, other_module)

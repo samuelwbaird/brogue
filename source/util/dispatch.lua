@@ -2,7 +2,7 @@
 -- frame based delays
 -- co-routines with their own environment and some conveniences
 -- a weave of many co-routines
--- copyright 2014 Samuel Baird MIT Licence
+-- copyright 2016 Samuel Baird MIT Licence
 
 local coroutine = require('coroutine')
 

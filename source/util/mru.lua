@@ -1,7 +1,7 @@
 -- most recently used list
 -- fixed size, discard oldest
 -- only most recent is held
--- copyright 2014 Samuel Baird MIT Licence
+-- copyright 2016 Samuel Baird MIT Licence
 
 -- API
 -- put key, value -> discarded value if applicable (discard by order and by duplicate key?)

@@ -1,7 +1,7 @@
 -- multiple most recently used list
 -- fixed size, discard oldest
 -- stores multiple values for each key but honours recent list per individual entry
--- copyright 2014 Samuel Baird MIT Licence
+-- copyright 2016 Samuel Baird MIT Licence
 
 -- API
 -- put key, value -> discarded value if applicable by order (not key)

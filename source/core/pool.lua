@@ -1,7 +1,7 @@
 -- manage a pool of active and inactive objects
 -- supply a constructor or metatable to populate new objects
 -- maintain references to active and inactive objects
--- copyright 2014 Samuel Baird MIT Licence
+-- copyright 2016 Samuel Baird MIT Licence
 
 local table = require("table")
 local io = require("io")

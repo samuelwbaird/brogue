@@ -2,7 +2,7 @@
 -- optionally weak
 -- any number of keys associated with any number of values
 -- set and query by key and clear by value
--- copyright 2014 Samuel Baird MIT Licence
+-- copyright 2016 Samuel Baird MIT Licence
 
 -- API
 -- set [keys], value	-- assign a value to an array of keys
