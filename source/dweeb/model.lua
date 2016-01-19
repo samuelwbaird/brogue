@@ -68,7 +68,7 @@ return class(function (model)
 				return r1, r2, r3, r4, r5
 			else
 				self:abort_transaction()
-				error(r1)
+				error(r1, 2)
 			end
 		end
 	end

@@ -171,6 +171,7 @@ return class(function (model_class)
 	
 	function model_class:collect(where_fields)
 		-- either all or filtered, return as an array
+		return array():collect(self:iterate(where_fields))
 	end
 	
 	function model_class:define_relationship(name, other_class, id_field)

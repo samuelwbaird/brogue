@@ -31,7 +31,7 @@ elseif not is_detached then
 end
 
 -- dummy
-log = function () end
+log = function (type, text) error('early log ' .. (type or  '')  .. ' ' .. (text or ''), 2) end
 
 -- loop for this thread
 loop = zloop.new()

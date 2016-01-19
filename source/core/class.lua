@@ -157,6 +157,12 @@ local function class(class_constructor)
 	function class.has_instance(obj)
 		return obj and getmetatable(obj) == class
 	end
+	
+	function class.delegate(obj, method)
+		return function (...)
+			method(obj, ...)
+		end
+	end
 
 	-- let the caller define this class
 	if class_constructor then

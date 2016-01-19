@@ -46,14 +46,39 @@ return class(function (log)
 		self.file = filename and assert(io.open(filename, 'a'), 'cannot log to ' .. filename)
 	end
 
-	function log:log(type, text)
-		if type and not text then
-	 		text, type = type, 'message'
+	function log:log(log_type, text)
+		if log_type and not text then
+	 		text, log_type = log_type, 'message'
 	 	end
+		
+		if type(text) == 'table' then
+			local function value_to_text(value, prefix)
+				if type(value) == 'string' then
+					return '\"' .. value .. '\"'
+				elseif type(value) ~= 'table' then
+					return tostring(value)
+				else
+					local out = {}
+					if #value > 0 then
+						for i = 1, #value do
+							out[#out + 1] = value_to_text(value[i])
+						end
+					else
+						for k, v in pairs(value) do
+							out[#out + 1] = (k .. ' = ' .. value_to_text(v))
+						end
+					end
+					return '{' .. table.concat(out, ', ') .. '}'
+				end
+			end
+			text = value_to_text(text)
+		elseif type(text) ~= 'string' then
+			text = tostring(text)
+		end
 	
 		local output = 
 			os.date('!%F %T UTC ')  ..
-			(type or '') .. ' : ' ..
+			(log_type or '') .. ' : ' ..
 			(text or '') .. '\n'
 			
 		if self.file then
