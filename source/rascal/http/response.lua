@@ -63,16 +63,14 @@ return class(function (response)
 		for field, value in pairs(self.headers) do
 			h:push(field .. ': ' .. value)
 		end
-		
-		if self.body then
-			return table.concat(h, '\r\n') .. '\r\n\r\n' .. self.body
-		else
-			return table.concat(h, '\r\n')
-		end
+
+		return table.concat(h, '\r\n') .. '\r\n\r\n' .. (self.body or '')
 	end
 	
 	response.status_code_text = {
 		[200] = 'OK',
+		[401] = 'Unauthorised',
+		[403] = 'Forbidden',
 		[404] = 'Not Found',
 		[500] = 'Internal Server Error',
 	}

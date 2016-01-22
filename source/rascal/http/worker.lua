@@ -75,11 +75,6 @@ return class(function (http_worker)
 	end
 
 	function http_worker:handle_request(request, context, response)
-		-- TODO: think about this stuff
-		-- could make self, response, context & response global references here
-		-- could add methods to context that wrap stuff eg. context:defer()
-		-- could set up a defer_matrix object to use here
-		
 		-- rascal.log('verbose', request.method .. ' ' .. (request.url_path or '') .. ' ' .. (request.url_query or ''))
 
 		-- run request, context, response through the handler configuration
@@ -279,11 +274,12 @@ end
 
 local function session(handler)
 	-- create a handler that wraps session cookie tracking
+	local cookie_session = require('rascal.http.cookie_session_handler')
 	
 	return function (request, context, response)
-		
-		-- then proxy through the inner handler
-		return use_handler(handler, request, context, response)
+		if cookie_session:handle(request, context, response) then
+			return use_handler(handler, request, context, response)
+		end
 	end
 end
 
@@ -293,7 +289,27 @@ local function redirect(path)
 		response:set_header('Location', path)
 		return true
 	end
-	
+end
+
+local function unauthorised()
+	return function (request, context, response)
+		response:set_status(401)
+		return true
+	end
+end
+
+local function status(http_status_number)
+	return function (request, context, response)
+		response:set_status(http_status_number)
+		return true
+	end
+end
+
+local function empty()
+	return function (request, context, response)
+		response:set_body('')
+		return true
+	end
 end
 
 -- custom handler

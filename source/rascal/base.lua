@@ -93,3 +93,22 @@ detach = function (code, args)
 
 	zthreads.run(ctx, code_string, args):start(true)
 end
+
+-- no uninitialised reads or writes to global variables after this
+setmetatable(_G, {
+	__index = function (obj, property)
+		error('uninitialised read from global ' .. tostring(property), 2)
+	end,
+})
+
+-- optionally prevent uninitialised writes as well
+function strict()
+	setmetatable(_G, {
+		__index = function (obj, property)
+			error('uninitialised read from global ' .. tostring(property), 2)
+		end,
+		__newindex = function (obj, property, value)
+			error('uninitialised write to global ' .. tostring(property), 2)
+		end,
+	})	
+end

@@ -38,9 +38,7 @@ return class(function (session_server)
 		math.randomseed(os.time())
 		self.last_purge = nil
 		
-		-- self.sessions = {}
 		self.db = sqlite(db_name, true)
-		--self.db:pragma('locking_mode', 'EXCLUSIVE')
 		self.db:pragma('synchronous', 'OFF')
 		
 		self.db:prepare_table('session', {
