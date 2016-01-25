@@ -7,6 +7,7 @@ local os = require('os')
 
 -- external modules
 local cjson = require('cjson')
+local cmsgpack = require('cmsgpack')
 
 -- core modules
 local class = require('core.class')
@@ -70,7 +71,11 @@ return class(function (request)
 	end
 	
 	function request:json()
-		return cjson.decode(self.body or '{}') or {}
+		return self.body and cjson.decode(self.body) or {}
+	end
+	
+	function request:msgpack()
+		return self.body and cmsgpack.unpack(self.body) or {}
 	end
 	
 	function request:rewrite_url_path(new_url_path)

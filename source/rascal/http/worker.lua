@@ -59,6 +59,7 @@ return class(function (http_worker)
 			if body == nil then
 				return
 			end
+			-- log('verbose', 'request\n' .. body)
 			
 			local request = http_request(body)
 			local response = http_response(request)

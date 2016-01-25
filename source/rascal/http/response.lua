@@ -9,6 +9,7 @@ local table = require('table')
 
 -- external modules
 local cjson = require('cjson')
+local cmsgpack = require('cmsgpack')
 
 -- core modules
 local class = require('core.class')
@@ -43,6 +44,11 @@ return class(function (response)
 	function response:set_json(json)
 		self:set_mimetype_from_extension('json')
 		self:set_body(cjson.encode(json or {}))
+	end
+	
+	function response:set_msgpack(data)
+		self:set_mimetype_from_extension('msgpack')
+		self:set_body(cmsgpack.pack(data))
 	end
 	
 	function response:set_mimetype_from_extension(extension)
@@ -104,5 +110,6 @@ return class(function (response)
 		['tgz'] = 'application/gnutar',
 		['xml'] = 'application/xml',
 		['zip'] = 'application/zip',
+		['msgpack'] = 'application/x-msgpack',
 	}
 end)
