@@ -21,6 +21,7 @@ local mru = require('util.mru')
 local rascal = require('rascal.core')
 local http_request = require('rascal.http.request')
 local http_response = require('rascal.http.response')
+local timeout_group = require('rascal.util.timeout_group')
 
 return class(function (http_worker)
 	
@@ -32,6 +33,8 @@ return class(function (http_worker)
 		self.deferred_connections = mru(1024 * 16)
 		-- arbitrary matrix of signal -> connection relationships
 		self.defer_signals = mtm(true)
+		-- deferred connections that may need to be timed out
+		self.defer_timeouts = timeout_group()
 		
 		local handler_script = http_worker.create_handler(configuration)
 		-- execute to create the chain and keep it
@@ -73,6 +76,7 @@ return class(function (http_worker)
 			-- tell the worker we're ready for more work
 			request_from_router:send('ready')
 		end)
+		loop:add_interval(1000, function () self:check_timeouts() end)		
 	end
 
 	function http_worker:handle_request(request, context, response)
@@ -117,12 +121,27 @@ return class(function (http_worker)
 		end
 	end
 	
-	-- high level long polling
-	
-	-- weakly referenced many to many triggers to signal relationship
-	function http_worker:defer(keys, request, context, response)
-		local token = self:capture_deferred(request, context, response)
-		self.defer_signals:push(keys, token)
+	-- support long polling, defer response until signalled
+	function http_worker:defer(keys, request, context, response, timeout_function)
+		-- the details of the connection need to be captured
+		if not context.deferred then
+			context.deferred = {}
+			self.deferred_connections:push(context.deferred, {
+				request = request,
+				context = context,
+				response = response,
+			})
+		end
+
+		-- old deferred connections should be cleared out in groups
+		if request.timeout then
+			context.timeout_function = timeout_function
+			self.defer_timeouts:add(context.deferred, math.ceil(request.timeout))
+		end
+		
+		-- the captured details are stored against an arbitrary key, in a many to many relationship
+		-- these arbitrary keys can be signalled for replay at any time
+		self.defer_signals:push(keys, context.deferred)
 	end
 	
 	-- signal any key to resume any associated connections
@@ -137,27 +156,15 @@ return class(function (http_worker)
 	function http_worker:clear_deferred(key)
 		local tokens = self.defer_signals:pull(key)
 		for _, token in ipairs(tokens) do
+			self.defer_timeouts:remove(token)
 			self.deferred_connections:clear(token)
 		end
 	end
 	
-	-- low level long polling
-	
-	-- support long polling, defer response until signalled
-	function http_worker:capture_deferred(request, context, response)
-		if not context.deferred then
-			context.deferred = {}	-- unique token
-			self.deferred_connections:push(context.deferred, {
-				request = request,
-				context = context,
-				response = response,
-			})
-		end
-		return context.deferred
-	end
-
 	-- signal to retry handling any relevant long connections
 	function http_worker:resume(deferred)
+		self.defer_timeouts:remove(deferred)
+
 		local connection = self.deferred_connections:pull(deferred)
 		if not connection then
 			return
@@ -178,6 +185,33 @@ return class(function (http_worker)
 		
 		connection.request:reset()
 		self:handle_request(connection.request, connection.context, connection.response)
+	end
+	
+	function http_worker:check_timeouts()
+		self.defer_timeouts:update(function (token)
+			local deferred = self.deferred_connections:pull(token)
+			if deferred then
+				self.defer_signals:remove(deferred)
+
+				-- if there is a timeout function specified, and it returns true, then send the response as output
+				if deferred.context.timeout_function then
+					if deferred.context.timeout_function() then
+						local output = tostring(deferred.response)
+						log(output)
+						self.push_to_router:send_all({
+							deferred.context.address,
+							output,
+						})
+					end
+				end
+
+				-- close the connection
+				self.push_to_router:send_all({
+					deferred.context.address,
+					'',
+				})
+			end
+		end)
 	end
 	
 	-- creating scripted handlers

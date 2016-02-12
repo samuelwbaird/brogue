@@ -25,7 +25,7 @@ return class(function (request)
 		-- a short timeout means less chance of sending data to a recycled connection address
 		-- a too short timeout means the browser waiting for data we don't send that we could have
 		-- it seems mobile safari defaults to 60s but we may need to adjust this based on the referral string
-		self.timeout = 60
+		self.timeout = 30
 		
 		local header = nil
 		local index_header = request_string:find('\r\n\r\n')
@@ -68,6 +68,17 @@ return class(function (request)
 	
 	function request:reset()
 		self.url_path = self.original_url_path or self.url_path
+	end
+	
+	-- detect JSON, msgpack, TODO: URL vars, form vars, detect from content without header
+	function request:input()
+		if self.headers['Content-Type'] == 'application/json' then
+			return self:json()
+		elseif self.headers['Content-Type'] == 'application/x-msgpack' or self.headers['Content-Type'] == 'application/msgpack' then
+			return self:msgpack()
+		else
+			return {}
+		end
 	end
 	
 	function request:json()

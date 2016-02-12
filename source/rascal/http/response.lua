@@ -20,6 +20,7 @@ return class(function (response)
 	function response:init(request)
 		self.status_code = 200
 		self.keep_alive = request and request.should_keep_alive or false
+		self.accept_type = request.headers['Accept-Type']
 		self.headers = {
 		}
 		self.body = nil
@@ -38,6 +39,15 @@ return class(function (response)
 			body = tostring(body)
 			self.headers['Content-Length'] = #body
 			self.body = body
+		end
+	end
+	
+	-- set JSON or msgpack output based on accept type
+	function response:set_output(data)
+		if self.accept_type == 'application/msgpack' or self.accept_type == 'application/x-msgpack' then
+			self:set_msgpack(data)
+		else
+			self:set_json(data)
 		end
 	end
 	
