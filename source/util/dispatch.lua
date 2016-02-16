@@ -9,15 +9,15 @@ local coroutine = require('coroutine')
 local class = require('core.class')
 local array = require('core.array')
 
--- update set, call update on each object, returning true
+-- update list, call update on each object, returning true
 -- means this object is finished and should be removed from the update set
 -- all update objects can also be tagged, and removed by tag
 -- handle update during iteration
 -- efficient reverse indexing might be good too
 
-local update_set = class(function (update_set)
+local update_list = class(function (update_list)
 	
-	function update_set:init(update_function)
+	function update_list:init(update_function)
 		self.update_function = update_function
 		
 		self.is_updating = false
@@ -26,11 +26,11 @@ local update_set = class(function (update_set)
 		self.remove_set = {}
 	end
 	
-	function update_set:add(obj, tag)
+	function update_list:add(obj, tag)
 		self.set[#self.set + 1] = { obj, tag }
 	end
 	
-	function update_set:update(update_function)
+	function update_list:update(update_function)
 		assert(not self.is_updating, 'update during update')
 
 		-- update during iteration
@@ -73,7 +73,7 @@ local update_set = class(function (update_set)
 		self.is_updating = false
 	end
 	
-	function update_set:clear()
+	function update_list:clear()
 		if self.is_updating then
 			self.has_removals = true
 			for _, entry in ipairs(self.set) do
@@ -84,7 +84,7 @@ local update_set = class(function (update_set)
 		end
 	end
 	
-	function update_set:get(tag_or_obj)
+	function update_list:get(tag_or_obj)
 		local out = {}
 		for _, entry in ipairs(self.set) do
 			if entry[1] == tag_or_obj or entry[2] == tag_or_obj then
@@ -94,7 +94,7 @@ local update_set = class(function (update_set)
 		return out
 	end
 	
-	function update_set:remove(tag_or_obj)
+	function update_list:remove(tag_or_obj)
 		local did_remove_objects = false
 		
 		for _, entry in ipairs(self.set) do
@@ -112,11 +112,11 @@ local update_set = class(function (update_set)
 		return did_remove_objects
 	end
 	
-	function update_set:is_empty()
+	function update_list:is_empty()
 		return #self.set > 0
 	end
 	
-	function update_set:do_removals()
+	function update_list:do_removals()
 		local new_set = {}
 		for _, entry in ipairs(self.set) do
 			if not self.remove_set[entry] then
@@ -131,17 +131,60 @@ local update_set = class(function (update_set)
 	
 end)
 
+-- update_set is like a lighterweight version of update_list
+-- without tagging and removing by tag
+-- order is NOT preserved
+-- relies on Lua property, table overwrite and deletions are safe during iteration
+-- table additions are not
+local update_set = class(function (update_set)
+
+	function update_set:init()
+		self:clear()
+	end
+	
+	function update_set:add(key, value)
+		value = value or key
+		if self.entries[key] then
+			self.entries[key] = value
+		else
+			self.entries_added[key] = value
+		end
+	end
+	
+	function update_set:remove(key)
+		self.entries_added[key] = nil
+		self.entries[key] = nil
+	end
+	
+	function update_set:clear()
+		self.entries_added = {}
+		self.entries = {}
+	end
+
+	function update_set:pairs()
+		-- coalesce added entries before iterating
+		-- NOTE: nested calls to pair are not safe
+		for k, v in pairs(self.entries_added) do
+			self.entries[k] = v
+		end
+		self.entries_added = {}
+		return pairs(self.entries)
+	end
+
+end)
+
+
 -- dispatch
 local dispatch = class(function (dispatch)
 	
 	function dispatch:init()
-		self.update_set = update_set()
+		self.update_list = update_list()
 	end
 	
 	-- call in this many steps/ticks/frames
 	function dispatch:delay(count, fn, tag)
 		assert(count > 0, 'delay count must be greater than 0')
-		self.update_set:add({
+		self.update_list:add({
 			type = 'delay',
 			count = count,
 			delay_fn = fn,
@@ -150,7 +193,7 @@ local dispatch = class(function (dispatch)
 	
 	-- call for this number of steps/ticks/frames
 	function dispatch:recur(count, fn, tag)
-		self.update_set:add({
+		self.update_list:add({
 			type = 'recur',
 			count = count,
 			repeat_fn = fn,
@@ -169,7 +212,7 @@ local dispatch = class(function (dispatch)
 	
 	-- schedule a co-routine to be resumed each update until complete
 	function dispatch:schedule(co, tag)
-		self.update_set:add({
+		self.update_list:add({
 			type = 'schedule',
 			co = co,
 		}, tag)
@@ -206,23 +249,33 @@ local dispatch = class(function (dispatch)
 	end
 	
 	function dispatch:update()
-		self.update_set:update(update_function)
+		self.update_list:update(update_function)
 	end
+	
+	function dispatch:safe_update(on_error)
+		self.update_list:update(function (entry)
+			local success, error = pcall(update_function, entry)
+			if not success then
+				on_error(error)
+			end
+		end)
+	end	
+	
 	
 	dispatch.dispatch = dispatch.update
 	
-	-- proxy through some methods from the update_set
+	-- proxy through some methods from the update_list
 	
 	function dispatch:clear()
-		self.update_set:clear()
+		self.update_list:clear()
 	end
 	
 	function dispatch:remove(tag_or_fn)
-		self.update_set:remove(tag_or_fn)
+		self.update_list:remove(tag_or_fn)
 	end
 	
 	function dispatch:is_empty()
-		return self.update_set:is_empty()
+		return self.update_list:is_empty()
 	end
 	
 end)
@@ -389,8 +442,8 @@ local weave = class(function (weave)
 		self.shared_globals = {}
 		setmetatable(self.shared_globals, { __index = environment or _G })
 		
-		self.update_set = update_set()
-		self.suspend_set = update_set()
+		self.update_list = update_list()
+		self.suspend_set = update_list()
 	end
 	
 	-- new, suspend, resume
@@ -401,7 +454,7 @@ local weave = class(function (weave)
 	
 	function weave:tagged_thread(tag, thread_function, ...)
 		local t = thread(self, tag, thread_function, ...)
-		self.update_set:add(t, tag)
+		self.update_list:add(t, tag)
 		return t
 	end
 	
@@ -412,9 +465,9 @@ local weave = class(function (weave)
 	end
 	
 	function weave:suspend(thread_or_tag)
-		local set = self.update_set:get(thread_or_tag)
+		local set = self.update_list:get(thread_or_tag)
 		if #set > 0 then
-			self.update_set:remove(thread_or_tag)
+			self.update_list:remove(thread_or_tag)
 			for _, thread in ipairs(set) do
 				self.suspend_set:add(thread, thread.tag)
 				if rawget(thread, 'on_suspend') then
@@ -429,7 +482,7 @@ local weave = class(function (weave)
 		if #set > 0 then
 			self.suspend_set:remove(thread_or_tag)
 			for _, thread in ipairs(set) do
-				self.update_set:add(thread, thread.tag)
+				self.update_list:add(thread, thread.tag)
 				if rawget(thread, 'on_resume') then
 					thread.on_resume:update()
 				end
@@ -440,25 +493,25 @@ local weave = class(function (weave)
 	-- clear and remove
 	
 	function weave:clear()
-		self.update_set:clear()
+		self.update_list:clear()
 		self.suspend_set:clear()
 	end
 	
 	function weave:remove(thread_or_tag)
-		self.update_set:remove(thread_or_tag)
+		self.update_list:remove(thread_or_tag)
 		self.suspend_set:remove(thread_or_tag)
 	end
 	 
 	-- update
 	
 	function weave:safe_update(on_error)
-		self.update_set:update(function (thread)
+		self.update_list:update(function (thread)
 			return thread:safe_update(on_error)
 		end)
 	end	
 	
 	function weave:update()
-		self.update_set:update(function (thread)
+		self.update_list:update(function (thread)
 			thread:update()
 		end)
 	end
@@ -466,4 +519,4 @@ local weave = class(function (weave)
 end)
 
 -- publish the package of classes, default to constructing a dispatch object
-return class.package({ update_set = update_set, dispatch = dispatch, thread = thread, weave = weave }, dispatch.new)
+return class.package({ update_list = update_list, update_set = update_set, dispatch = dispatch, thread = thread, weave = weave }, dispatch.new)

@@ -197,7 +197,6 @@ return class(function (http_worker)
 				if deferred.context.timeout_function then
 					if deferred.context.timeout_function() then
 						local output = tostring(deferred.response)
-						log(output)
 						self.push_to_router:send_all({
 							deferred.context.address,
 							output,
