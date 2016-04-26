@@ -84,6 +84,10 @@ local update_list = class(function (update_list)
 		end
 	end
 	
+	function update_list:is_clear()
+		return next(self.set) == nil
+	end
+	
 	function update_list:get(tag_or_obj)
 		local out = {}
 		for _, entry in ipairs(self.set) do
@@ -151,6 +155,10 @@ local update_set = class(function (update_set)
 		end
 	end
 	
+	function update_set:get(key)
+		return self.entries_added[key] or self.entries[key]
+	end
+	
 	function update_set:remove(key)
 		self.entries_added[key] = nil
 		self.entries[key] = nil
@@ -159,6 +167,10 @@ local update_set = class(function (update_set)
 	function update_set:clear()
 		self.entries_added = {}
 		self.entries = {}
+	end
+	
+	function update_set:is_clear()
+		return next(self.entries) == nil and next(self.entries) == nil
 	end
 
 	function update_set:pairs()
@@ -268,6 +280,10 @@ local dispatch = class(function (dispatch)
 	
 	function dispatch:clear()
 		self.update_list:clear()
+	end
+	
+	function dispatch:is_clear()
+		return self.update_list:is_clear()
 	end
 	
 	function dispatch:remove(tag_or_fn)
@@ -495,6 +511,10 @@ local weave = class(function (weave)
 	function weave:clear()
 		self.update_list:clear()
 		self.suspend_set:clear()
+	end
+	
+	function weave:is_clear()
+		return self.update_list:is_clear() and self.suspend_set:is_clear()
 	end
 	
 	function weave:remove(thread_or_tag)
