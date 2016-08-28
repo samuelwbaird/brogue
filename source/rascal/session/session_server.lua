@@ -83,13 +83,13 @@ return class(function (session_server)
 	
 	function session_server:purge()
 		local now = os.time()
-		if (last_purge == nil) or (last_purge < now - 60) then
+		if (self.last_purge == nil) or (self.last_purge < now - 60) then
 			-- send clear to caches
 			for row in self.db_check_expiring_sessions:query({ now }):rows() do
 				self.publish:expire(row.session_id)
 			end
 			self.db_expire_sessions:execute({ now })
-			last_purge = now
+			self.last_purge = now
 		end
 	end
 	

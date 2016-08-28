@@ -306,17 +306,6 @@ local function template(filename)
 	end
 end
 
-local function session(handler)
-	-- create a handler that wraps session cookie tracking
-	local cookie_session = require('rascal.http.cookie_session_handler')
-	
-	return function (request, context, response)
-		if cookie_session:handle(request, context, response) then
-			return use_handler(handler, request, context, response)
-		end
-	end
-end
-
 local function redirect(path)
 	return function (request, context, response)
 		response:set_status(303)
@@ -364,6 +353,11 @@ local function chain(chain_class_name, args, handler)
 			return use_handler(handler, request, context, response)
 		end
 	end
+end
+
+local function session(handler)
+	-- create a handler that wraps session cookie tracking
+	return chain('rascal.http.cookie_session_handler', {}, handler)
 end
 	
 local user_supplied_handler = {
