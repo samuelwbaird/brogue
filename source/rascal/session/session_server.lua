@@ -100,7 +100,7 @@ return class(function (session_server)
 		
 		local session_id = random_key.unique_printable(function (key)
 			return self.db_check_session_id:query({ key }):value() == 0
-		end, 32)
+		end, 128)
 
 		-- prepare statement to insert new session
 		self.db_insert_session:execute({ session_id, cmsgpack.pack(session_data or {}), ttl, self:expiry(ttl) })

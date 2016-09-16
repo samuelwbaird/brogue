@@ -230,7 +230,7 @@ local function use_handler(handler, request, context, response)
 		-- try each one until one handler accepts the request
 		for _, h in ipairs(handler) do
 			local result = use_handler(h, request, context, response)
-			if result then
+			if result or context.deferred then
 				return result
 			end
 		end
