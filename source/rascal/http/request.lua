@@ -72,13 +72,15 @@ return class(function (request)
 	
 	-- detect JSON, msgpack, TODO: URL vars, form vars, detect from content without header
 	function request:input()
-		if self.headers['Content-Type'] == 'application/json' then
-			return self:json()
-		elseif self.headers['Content-Type'] == 'application/x-msgpack' or self.headers['Content-Type'] == 'application/msgpack' then
-			return self:msgpack()
-		else
-			return {}
+		local content_type = self.headers['Content-Type']
+		if content_type then
+			if content_type:find('application/x-msgpack') or content_type:find('application/msgpack') then
+				return self:msgpack()
+			end
 		end
+
+		-- assume JSON by default
+		return self:json()
 	end
 	
 	function request:json()
