@@ -101,6 +101,10 @@ return class(function (http_worker)
 			response:set_body(result)
 		end
 		
+		self:send_response(request, context, response)
+	end
+	
+	function http_worker:send_response(request, context, response)	
 		-- send handle + response
 		local output = tostring(response)
 		-- rascal.log('verbose', output)
