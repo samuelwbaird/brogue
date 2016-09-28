@@ -44,7 +44,7 @@ return class(function (request)
 			for line in header:gmatch('(.-)\r\n') do
 				if first_line then
 					local field, value = line:match('(.-):%s(.*)')
-					self.headers[field] = value
+					self.headers[field:lower()] = value
 				else
 					first_line = line
 				end
@@ -53,7 +53,7 @@ return class(function (request)
 				self.method, self.url, self.http = first_line:match('([^%s]*)%s*([^%s]*)%s*([^%s]*)')
 			end
 			-- should keep alive
-			self.should_keep_alive = (self.http == 'HTTP/1.1' or self.headers['Connection'] == 'keep-alive')
+			self.should_keep_alive = (self.http == 'HTTP/1.1' or self.headers['connection'] == 'keep-alive')
 		end
 		
 		if self.url then
@@ -72,7 +72,7 @@ return class(function (request)
 	
 	-- detect JSON, msgpack, TODO: URL vars, form vars, detect from content without header
 	function request:input()
-		local content_type = self.headers['Content-Type']
+		local content_type = self.headers['content-type']
 		if content_type then
 			if content_type:find('application/x-msgpack') or content_type:find('application/msgpack') then
 				return self:msgpack()

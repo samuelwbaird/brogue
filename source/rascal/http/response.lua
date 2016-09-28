@@ -20,7 +20,7 @@ return class(function (response)
 	function response:init(request)
 		self.status_code = 200
 		self.keep_alive = request and request.should_keep_alive or false
-		self.accept_type = request.headers['Accept-Type']
+		self.accept_type = request.headers['accept-type']
 		self.headers = {
 		}
 		self.body = nil
@@ -31,13 +31,13 @@ return class(function (response)
 	end
 	
 	function response:set_header(header, value)
-		self.headers[header] = tostring(value)
+		self.headers[header:lower()] = tostring(value)
 	end
 	
 	function response:set_body(body)
 		if body then
 			body = tostring(body)
-			self.headers['Content-Length'] = #body
+			self.headers['content-length'] = #body
 			self.body = body
 		end
 	end
@@ -64,7 +64,7 @@ return class(function (response)
 	function response:set_mimetype_from_extension(extension)
 		local type = response.mimetypes[extension]
 		if type then
-			self.headers['Content-Type'] = type
+			self.headers['content-type'] = type
 		end
 	end
 	

@@ -18,7 +18,7 @@ return class(function (game_session)
 	
 	function game_session:handle(request, context, response)
 		-- is there a cookie with a valid session
-		local cookie_header = request.headers.Cookie or ''
+		local cookie_header = request.headers.cookie or ''
 		
 		-- read the session= value
 		local session = cookie_header:match('session=([^;]*);?')

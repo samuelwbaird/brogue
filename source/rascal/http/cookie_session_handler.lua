@@ -14,7 +14,7 @@ return class(function (cookie_session)
 	
 	function cookie_session:handle(request, context, response)
 		-- is there a cookie that might have a valid session?
-		local cookie_header = request.headers.Cookie or ''
+		local cookie_header = request.headers.cookie or ''
 		
 		-- read the session= value
 		local session_id = cookie_header:match('session=([^;]*);?')
