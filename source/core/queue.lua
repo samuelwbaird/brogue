@@ -37,5 +37,8 @@ return class(function (queue)
 		return nil
 	end
 
+	function queue:is_empty()
+		return self.head == nil
+	end
 	
 end)
