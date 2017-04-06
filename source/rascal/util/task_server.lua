@@ -57,7 +57,11 @@ return class(function (task_server)
 		self.workers[worker_id] = worker
 
 		-- implement external process version of detach
-		detach("require('rascal.util.task_server').run_as_worker(worker_id, channel_prefix)", { worker_id = worker_id, channel_prefix = self.channel_prefix })
+		if use_external_process then
+			detach_process("require('rascal.util.task_server').run_as_worker(worker_id, channel_prefix)", { worker_id = worker_id, channel_prefix = self.channel_prefix })
+		else
+			detach("require('rascal.util.task_server').run_as_worker(worker_id, channel_prefix)", { worker_id = worker_id, channel_prefix = self.channel_prefix })
+		end
 	end
 	
 	-- usage API --

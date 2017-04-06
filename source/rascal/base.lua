@@ -94,6 +94,51 @@ detach = function (code, args)
 	zthreads.run(ctx, code_string, args):start(true)
 end
 
+detach_process = function (code, args)
+	-- gather environment arg, encode as hex msgpack binary
+	local environment = {}
+	environment.shared_globals = shared_globals or {}
+	
+	-- add argument unpacking to the supplied code and include that code in the environment for safe packing
+	local task_code = array()
+	task_code:push('local args = ...')
+	for name, _ in pairs(args) do
+		task_code:push('local ' .. name .. ' = args.' .. name)
+	end
+	task_code:push(code)
+	environment.code = task_code:concat('\n')
+	environment.args = args or {}
+	
+	-- msgpack to encode the environment and hex packing to safely escape it as part of a commandline argument
+	local cmsgpack = require('cmsgpack')
+	local binary_to_hex = function (binary) return (binary:gsub('.', function (c) return string.format('%02X', string.byte(c)) end)) end
+	
+	-- preamble
+	local process_code = array()
+	process_code:push([[local hex_to_binary = function (hex) return (hex:gsub('..', function (cc) return string.char(tonumber(cc, 16)) end)) end]])
+	process_code:push([[package.path = hex_to_binary(']] .. binary_to_hex(package.path) .. [[')]])
+	process_code:push([[rascal = require('rascal.core')]])
+
+	-- smuggle serialised environment
+	process_code:push([[local packed_environment = ']] .. binary_to_hex(cmsgpack.pack(environment)) .. [[']])
+	process_code:push([[local environment = cmsgpack.unpack(hex_to_binary(packed_environment))]])
+	process_code:push('for key, value in pairs(environment.shared_globals) do')
+	process_code:push('	_G[key] = value')
+	process_code:push('end')
+	process_code:push('is_detached_process = true')
+
+	-- now unpack the smuggled source code and args to begin
+	process_code:push('loadstring(environment.code)(environment.args)')
+
+	-- run this packed code as a separate process
+	if type(jit) == 'table' then
+		os.execute('luajit -e "' .. process_code:concat(' ') .. '"&')
+	else
+		os.execute('lua -e "' .. process_code:concat(' ') .. '"&')
+	end
+end
+
+
 -- no uninitialised reads or writes to global variables after this
 setmetatable(_G, {
 	__index = function (obj, property)
