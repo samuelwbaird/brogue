@@ -131,7 +131,7 @@ detach_process = function (code, args)
 	process_code:push('loadstring(environment.code)(environment.args)')
 
 	-- run this packed code as a separate process
-	if type(jit) == 'table' then
+	if type(rawget(_G, 'jit')) == 'table' then
 		os.execute('luajit -e "' .. process_code:concat(' ') .. '"&')
 	else
 		os.execute('lua -e "' .. process_code:concat(' ') .. '"&')

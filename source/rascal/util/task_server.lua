@@ -100,7 +100,9 @@ return class(function (task_server)
 	end
 	
 	function task_server:close()
+		loop:sleep_ex(100)
 		self.publish:worker_signal_close()
+		loop:sleep_ex(100)
 	end
 	
 	function task_server:complete(close)
@@ -114,7 +116,7 @@ return class(function (task_server)
 		end
 
 		-- clean up events
-		loop:sleep_ex(100)
+		loop:sleep_ex(1000)
 	end
 	
 	-- worker API --
@@ -185,7 +187,7 @@ return class(function (task_server)
 
 			-- assemble the code
 			thread_code:push(lua_source)
-			local code_string = table.concat(thread_code, '\n')
+			local code_string = table.concat(thread_code, ' ')
 
 			-- print(code_string)
 			
