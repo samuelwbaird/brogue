@@ -3,7 +3,6 @@
 
 local class = require('core.class')
 local array = require('core.array')
-local queue = require('core.queue')
 
 local rascal = require('rascal.core')
 
@@ -37,8 +36,9 @@ return class(function (task_server)
 			self.channel_prefix = 'inproc://' .. self.id
 		end
 		
+		-- push and pop work queue as a stack, pop newest task, not oldest task, to limit overfilling queues from several layers of producers
 		self.workers = {}
-		self.work_queue = queue()
+		self.work_queue = array()
 		
 		proxy_server(self, worker_api_description, self.channel_prefix .. '.api', zmq.REP)
 		self.publish = proxy_server(self, publish_signal_api_description, self.channel_prefix .. '.pub', zmq.PUB)
@@ -78,7 +78,7 @@ return class(function (task_server)
 	end
 	
 	function task_server:queue_lua_file(lua_filename, parameters, on_result)
-		local input = assert(io.open('lua_filename', 'r'), 'could not read lua task file ' .. lua_filename)
+		local input = assert(io.open(lua_filename, 'r'), 'could not read lua task file ' .. lua_filename)
 		local source = input:read('*a')
 		input:close()
 		

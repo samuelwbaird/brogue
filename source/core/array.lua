@@ -137,6 +137,16 @@ return class(function (array)
 		table.insert(self, 1, value)
 	end
 	
+	function array:pop()
+		if self:is_empty() then
+			return nil
+		end
+		
+		local value = self[#self]
+		table.remove(self, #self)
+		return value
+	end
+	
 	function array:remove_element(element, more_than_once)
 		for i, v in ipairs(self) do
 			if v == element then
