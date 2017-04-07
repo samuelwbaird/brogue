@@ -17,6 +17,7 @@ return class(function (task_server)
 		worker_is_idle = 'worker_id:string',
 		worker_did_yield_result = 'worker_id:string, result:*',
 		worker_request_work = 'worker_id:string -> task:*',
+		worker_did_close = 'worker_id:string',
 		
 		-- allow a proxy inside tasks to queue more tasks
 		worker_queue_lua = 'lua_source:string, parameters:*',
@@ -100,9 +101,19 @@ return class(function (task_server)
 	end
 	
 	function task_server:close()
-		loop:sleep_ex(100)
-		self.publish:worker_signal_close()
-		loop:sleep_ex(100)
+		while true do
+			self.publish:worker_signal_close()
+			loop:sleep_ex(100)
+			local all_closed = true
+			for _, worker in pairs(self.workers) do
+				if not worker.closed then
+					all_closed = false
+				end
+			end
+			if all_closed then
+				break
+			end
+		end
 	end
 	
 	function task_server:complete(close)
@@ -116,7 +127,7 @@ return class(function (task_server)
 		end
 
 		-- clean up events
-		loop:sleep_ex(1000)
+		loop:sleep_ex(100)
 	end
 	
 	-- worker API --
@@ -147,6 +158,13 @@ return class(function (task_server)
 				lua_source = task.lua_source,
 				parameters = task.parameters,
 			}
+		end
+	end
+	
+	function task_server:worker_did_close(worker_id)
+		local worker = self.workers[worker_id]
+		if worker then
+			worker.closed = true
 		end
 	end
 
@@ -192,8 +210,10 @@ return class(function (task_server)
 			-- print(code_string)
 			
 			-- compile task code
-			local fn, error = loadstring(code_string, name)
-			assert(fn, error)
+			local fn, message = loadstring(code_string, name)
+			if not fn then
+				error(message .. '\n' .. code_string)
+			end
 			
 			-- finally run the task
 			fn(environment)
@@ -229,6 +249,7 @@ return class(function (task_server)
 		local signals = {
 			worker_signal_waiting = request_work_if_idle,
 			worker_signal_close = function ()
+				api:worker_did_close(worker_id)
 				loop:stop()
 			end
 		}
