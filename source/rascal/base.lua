@@ -39,7 +39,7 @@ loop = zloop.new()
 -- share simple global values with other threads
 local shared_globals = {}
 share_global = function (key, value)
-	_G[key] = value
+	rawset(_G, key, value)
 	shared_globals[key] = value
 end
 share_globals = function (table)
