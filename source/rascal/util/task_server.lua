@@ -250,6 +250,7 @@ return class(function (task_server)
 			worker_signal_waiting = request_work_if_idle,
 			worker_signal_close = function ()
 				api:worker_did_close(worker_id)
+				loop:sleep_ex(1000)
 				loop:stop()
 			end
 		}
