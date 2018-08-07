@@ -31,8 +31,8 @@ local function module(module_constructor, ...)
 	return module_table
 end
 
-return setmetatable({ new = module }, {
+return setmetatable({ }, {
 	__call = function(module_module, ...)
-		return module_module.new(...)
+		return module(...)
 	end
 })

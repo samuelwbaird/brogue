@@ -217,4 +217,4 @@ local function package(publish_these_classes_and_functions, default_constructor)
 	return publish
 end
 
-return package({ new = class, class = class, derive = derive, package = package }, class)
+return package({ class = class, derive = derive, package = package }, class)
