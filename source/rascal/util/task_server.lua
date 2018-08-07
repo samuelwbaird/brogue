@@ -231,13 +231,13 @@ return class(function (task_server)
 				return
 			end
 			
-			local success, result = pcall(handle_work, task.name, task.lua_source, task.parameters)
+			local success, result = pcall_trace(handle_work, task.name, task.lua_source, task.parameters)
 			if success then
 				if type(result) ~= 'nil' then
 					api:worker_did_yield_result(worker_id, result)
 				end
 			else
-				log('error in task: ' .. result)
+				log('error in task: [' .. task.name ..'] ' .. result)
 			end
 
 			working = false

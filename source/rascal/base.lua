@@ -157,3 +157,19 @@ function strict()
 		end,
 	})	
 end
+
+-- enhanced pcall with stack trace captured
+pcall_trace = function (f, ...)
+	local debug = require('debug')
+	local handle_by_capturing_stack_trace = function (err)
+		if debug then
+			return debug.traceback(tostring(err))
+		else
+			return tostring(err)
+		end
+	end
+	
+	-- capture varargs
+	local varargs = { n = select("#", ...), ... }
+ 	return xpcall(function(...) return f(unpack(varargs, 1, varargs.n)) end, handle_by_capturing_stack_trace)
+end
