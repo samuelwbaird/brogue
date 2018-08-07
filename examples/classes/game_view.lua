@@ -10,12 +10,9 @@ local rascal = require('rascal.core')
 local template = require('rascal.util.template')
 
 return class(function (game_view)
-	local super = game_view.new
 
-	function game_view.new()
-		local self = super()
+	function game_view:init()
 		self.template = template.from_file('templates/game_view.html')
-		return self
 	end
 		
 	function game_view:handle(request, context, response)

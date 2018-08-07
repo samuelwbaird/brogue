@@ -11,10 +11,8 @@ local model = require('dweeb.model')
 math.randomseed(os.time())
 
 return class(function (game_thread)
-	local super = game_thread.new
 	
-	function game_thread.new(db_path)
-		local self = super()
+	function game_thread:init(db_path)
 		self:load_model(db_path)
 		
 		-- define an API to query and update the game
@@ -37,8 +35,6 @@ return class(function (game_thread)
 		loop:add_interval(1000 * 3, function ()
 			self:game_tick()
 		end)
-
-		return self
 	end
 	
 	-- api methods

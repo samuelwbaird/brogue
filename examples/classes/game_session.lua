@@ -8,12 +8,9 @@ local session_client = require('rascal.session.session_client')
 local random_key = require('rascal.util.random_key')
 
 return class(function (game_session)
-	local super = game_session.new
 	
-	function game_session.new()
-		local self = super()
+	function game_session:init()
 		self.session_client = session_client()
-		return self
 	end
 	
 	function game_session:handle(request, context, response)

@@ -7,16 +7,11 @@ local array = require('core.array')
 local rascal = require('rascal.core')
 
 return class(function (game_api)
-	local super = game_api.new
 
-	function game_api.new()
-		local self = super()
-		
+	function game_api:init()
 		-- connect to proxies
 		self.game_query = rascal.registry:connect('game.query')
 		rascal.registry:connect_sub('game.pub', self)
-
-		return self
 	end
 	
 	function game_api:signal_update()

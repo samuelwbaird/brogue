@@ -11,26 +11,18 @@ local pairs, ipairs = pairs, ipairs
 
 return class(function (array)
 	
-	-- capture the default constructor
-	local super = array.new
-	
 	-- custom constructor
-	function array.new(init)
+	function array:init(init)
 		-- optionally initialise from an iterator
 		if type(init) == 'function' then
-			return array():collect(init)
-		end
-		
-		local self = super()
+			self:collect(init)
 		
 		-- copy the contents of a table if supplied
-		if type(init) == 'table' then
+		elseif type(init) == 'table' then
 			for i, v in ipairs(init) do
 				self[i] = v
 			end
 		end
-		
-		return self
 	end
 
 	-- call a function on each element
