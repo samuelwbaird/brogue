@@ -242,7 +242,9 @@ return class(function (task_server)
 
 			working = false
 			api:worker_is_idle(worker_id)			
-			request_work_if_idle()
+
+			-- check again for work after full callstack unwind
+			loop:add_time(1, request_work_if_idle)
 		end
 
 		-- connect signals from the co-ordinator push API
