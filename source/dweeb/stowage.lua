@@ -14,7 +14,9 @@
 
 local class = require('core.class')
 local array = require('core.array')
+
 local sqlite = require('dweeb.sqlite')
+local cmsgpack = require('cmsgpack')
 
 return class(function (stowage)
 	
@@ -32,6 +34,14 @@ return class(function (stowage)
 				return false
 			end
 			
+			statements.insert_value:execute({ key, cmsgpack.pack(initial_value) })
+			
+			if reverse_values then
+				for _, value in ipairs(reverse_values) do
+					statements.insert_reverse:execute({ value, key })
+				end
+			end
+			
 			return true
 		end, self.db, self.statements)
 	end
@@ -43,40 +53,74 @@ return class(function (stowage)
 
 	-- completely remove a key and all its related values
 	function stowage:remove(key)
+		self.db:transaction(function (db, statements)
+			statements.delete_value:execute({ key })
+			statements.delete_log:execute({ key })
+			statements.delete_reverse_key:execute({ key })
+		end, self.db, self.statements)
 	end
 
 	-- atomic value per key ------------------------------------------------------------
 
 	-- return the atomic value for this key
 	function stowage:get_value(key)
+		local value = self.statements.get_value:query({ key }):value()
+		return value and cmsgpack.unpack(value)
 	end
 	
 	-- set the atomic value for this key (and optionally reset the reverse index)
 	function stowage:set_value(key, value, reverse_values)
+		self.db:transaction(function (db, statements)
+			statements.upsert_value:execute({ key, value })
+			
+			if reverse_values then
+				statements.delete_reverse_key:execute({ key })
+				for _, value in ipairs(reverse_values) do
+					statements.insert_reverse:execute({ value, key })
+				end
+			end
+		end, self.db, self.statements)
 	end
 
 	-- sequential log per key ---------------------------------------------------------
 	
 	function stowage:log_append(key, event)
+		self.statements.insert_log:execute({ key, cmsgpack.pack(event) })
 	end
 	
 	function stowage:log_read(key, max, after_log_id)
+		local output = array()
+		
+		return output
 	end
 	
 	function stowage:log_clear(key, up_to_log_id)
+		if up_to_log_id then
+			self.statements.delete_log_up_to_id:execute({ key, up_to_log_id })
+		else
+			self.statements.delete_log:execute({ key })
+		end
 	end
 	
 	function stowage:log_remove(key, log_id)
+		self.statements.delete_log_id:execute({ key, log_id })
 	end
 	
 	-- reverse index ------------------------------------------------------------------
 	
 	-- set one or many reverse index values pointing to a key
-	function stowage:reverse_set(key, values)
+	function stowage:reverse_set(key, reverse_values)
+		self.db:transaction(function (db, statements)
+			statements.delete_reverse_key:execute({ key })
+			for _, value in ipairs(reverse_values) do
+				statements.insert_reverse:execute({ value, key })
+			end
+		end, self.db, self.statements)
 	end
 	
 	-- remove all reverse references to this key
 	function stowage:reverse_remove(key)
+		self.statements.delete_reverse_key:execute({ key })
 	end
 	
 	-- retrieve all they keys that are reverse referenced by this value
@@ -146,25 +190,19 @@ return class(function (stowage)
 		-- main key value table statements
 		statements.has_key = db:select('keys', 'key', { 'key' }):prepare()
 		statements.get_value = db:select('keys', 'value', { 'key' }):prepare()
+		statements.insert_value = db:insert('keys', { 'key', 'value' }):prepare()
+		statements.delete_value = db:delete('keys', { 'key' }):prepare()
+		statements.upsert_value = db:upsert('keys', { 'key', 'value' }):prepare()
 		
 		-- log table statements
-		-- insert
+		statements.insert_log = db:insert('log', { 'key', 'value' }):prepare()
+		statements.delete_log = db:delete('log', { 'key' }):prepare()
+		statements.delete_log_up_to_id = db:delete('log', { 'key', 'id <='}):prepare()
+		statements.delete_log_id = db:delete('log', { 'key', 'id' }):prepare()
 		
 		-- reverse index table statements
-		
-		
-		
-		
-		
-		
-		-- -- prepare statements to use for all transactions
-		-- local select_statement = db:select('codes', 'id, code' , { 'code' }):prepare()
-		-- local delete_statement = db:delete('codes', { 'id' }):prepare()
-		-- delete_statement:execute({ 12 })
-		-- delete_statement:execute({ 13 })
-		-- delete_statement:execute({ 14 })
-		
-		
+		statements.delete_reverse_key = db:delete('reverse', { 'key' }):prepare()
+		statements.insert_reverse = db:insert('reverse', { 'value', 'key' }):prepare()
 		
 		return statements
 	end
