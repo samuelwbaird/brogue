@@ -452,7 +452,7 @@ local db = class(function (db)
 		-- wrap a function in a transaction, abort on error
 		if self.in_transaction then
 			-- allow recursive transactions through
-			transaction_code(...)
+			return transaction_code(...)
 		else
 			self:begin_transaction();
 			local success, r1, r2, r3, r4, r5 = pcall(transaction_code, ...)

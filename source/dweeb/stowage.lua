@@ -19,12 +19,16 @@ local sqlite = require('dweeb.sqlite')
 local cmsgpack = require('cmsgpack')
 
 return class(function (stowage)
+	math.randomseed(os.time())
 	
 	function stowage:init(db_name, exclusive)
 		local db = assert(sqlite(db_name, true), 'cannot create stowage sqlite file ' .. (db_name or '<nil>'))
 		
 		self.db = self:prepare_db(db)
 		self.statements = self:prepare_db_statements(db)
+		
+		self.random_suffix_chars = '1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'	
+		self.random_suffix_length = 8
 	end	
 		
 	-- create a new key, return true if successful (ie. the key does not already exist)
@@ -49,6 +53,20 @@ return class(function (stowage)
 	-- create a new key, using a fixed prefix and a random unique suffiz
 	-- return the new key
 	function stowage:create_new(prefix, initial_value, reverse_values)
+		local random_chars = self.random_suffix_chars
+		local length = self.random_suffix_length
+		while true do
+			local key = { prefix }
+			for i = 1, length do
+				local index = math.random(1, #random_chars)
+				key[#key + 1] = random_chars:sub(index, index)
+			end
+			key = table.concat(key)
+			if self:create(key, initial_value, reverse_values) then
+				return key
+			end
+			length = length + 1
+		end
 	end
 
 	-- completely remove a key and all its related values
@@ -125,6 +143,10 @@ return class(function (stowage)
 	
 	-- retrieve all they keys that are reverse referenced by this value
 	function stowage:reverse_query(value)
+	end
+	
+	-- retrieve the first reverse value with this prefix
+	function stowage:reverse_first(prefix)
 	end
 	
 	-- export keys --------------------------------------------------------------------
