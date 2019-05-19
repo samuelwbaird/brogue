@@ -143,6 +143,16 @@ return class(function (stowage)
 	
 	-- retrieve all they keys that are reverse referenced by this value
 	function stowage:reverse_query(value)
+		local keys = array()
+		for row in self.statements.get_reverse_keys:query({ value }):rows() do
+			keys:push(row.key)
+		end
+		return keys
+	end
+	
+	-- retrieve the first key that matches this reverse reference
+	function stowage:reverse_query_one(value)
+		return self.statements.get_reverse_key:query({ value }):value()
 	end
 	
 	-- retrieve the first reverse value with this prefix
@@ -225,6 +235,9 @@ return class(function (stowage)
 		-- reverse index table statements
 		statements.delete_reverse_key = db:delete('reverse', { 'key' }):prepare()
 		statements.insert_reverse = db:insert('reverse', { 'value', 'key' }):prepare()
+		
+		statements.get_reverse_keys = db:select('reverse', 'key', { 'value' }):prepare()
+		statements.get_reverse_key = db:select('reverse', 'key', { 'value' }):limit(1):prepare()
 		
 		return statements
 	end
