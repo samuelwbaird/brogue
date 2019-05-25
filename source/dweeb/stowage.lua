@@ -30,7 +30,11 @@ return class(function (stowage)
 		self.random_suffix_chars = '1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'	
 		self.random_suffix_length = 8
 	end	
-		
+	
+	function stowage:close()
+		self.db:close()
+	end
+	
 	-- create a new key, return true if successful (ie. the key does not already exist)
 	function stowage:create(key, initial_value, reverse_values)
 		return self.db:transaction(function (db, statements)
@@ -89,7 +93,7 @@ return class(function (stowage)
 	-- set the atomic value for this key (and optionally reset the reverse index)
 	function stowage:set_value(key, value, reverse_values)
 		self.db:transaction(function (db, statements)
-			statements.upsert_value:execute({ key, value })
+			statements.upsert_value:execute({ key, cmsgpack.pack(value) })
 			
 			if reverse_values then
 				statements.delete_reverse_key:execute({ key })
@@ -102,13 +106,27 @@ return class(function (stowage)
 
 	-- sequential log per key ---------------------------------------------------------
 	
-	function stowage:log_append(key, event)
-		self.statements.insert_log:execute({ key, cmsgpack.pack(event) })
+	function stowage:log_append(key, data)
+		assert(key, 'cannot log to nil key')
+		self.statements.insert_log:execute({ key, cmsgpack.pack(data) })
 	end
 	
-	function stowage:log_read(key, max, after_log_id)
+	function stowage:log_read(key, after_log_id, max)
 		local output = array()
-		
+		local rows = nil
+		if max then
+			rows = self.statements.read_log_with_limit:query({ key, after_log_id, max }):rows()
+		elseif after_log_id then
+			rows = self.statements.read_log_from_id:query({ key, after_log_id }):rows()
+		else
+			rows = self.statements.read_log:query({ key }):rows()
+		end
+		for row in rows do
+			output:push({
+				id = row.id,
+				data = cmsgpack.unpack(row.data),
+			})
+		end
 		return output
 	end
 	
@@ -157,24 +175,50 @@ return class(function (stowage)
 	
 	-- retrieve the first reverse value with this prefix
 	function stowage:reverse_first(prefix)
+		local value = self.statements.get_reverse_from:query({ value }):value()
+		if value and value:sub(1, #prefix) ~= prefix then
+			return nil
+		end
+		return value
 	end
 	
 	-- export keys --------------------------------------------------------------------
 	
 	-- return all keys for a given key prefiex
 	function stowage:export_keys(prefix)
-	end
-	
-	-- export all aspects of a key as a single value
-	function stowage:export(key)
-	end
-	
-	-- export all aspects of all keys for a prefix as an array of values
-	function stowage:export_prefix(prefix)
+		local keys = array()
+		local query_result = self.statements.get_keys_from:query({ prefix })
+		for row in query_result:rows() do
+			if row.key:sub(1, #prefix) == prefix then
+				keys:push(row.key)
+			else
+				query_result:release()
+				break
+			end
+		end
+		return keys
 	end
 	
 	-- remove all keys for a given key prefix
-	function stowage:remove_prefix(prefix)
+	function stowage:remove_keys(prefix)
+		local query_result = self.statements.get_keys_from:query({ prefix })
+		for row in query_result:rows() do
+			if row.key:sub(1, #prefix) == prefix then
+				self:remove(key)
+			else
+				query_result:release()
+				break
+			end
+		end
+	end
+	
+	-- return the next key that follows a given prefix
+	function stowage:next_key(prefix, must_match_prefix)
+		local key = self.statements.get_key_from:query({ prefix }):value()
+		if must_match_prefix and key and key:sub(1, #prefix) ~= prefix then
+			return nil
+		end
+		return key
 	end
 	
 	-- internal, prepare all sqlite statements required -----------------------------
@@ -184,7 +228,7 @@ return class(function (stowage)
 		db:prepare_table('keys', {
 			columns = {
 				{ name = 'key', type = 'TEXT UNIQUE' },
-				{ name = 'value', type = 'TEXT' },
+				{ name = 'value', type = 'TEXT' },		-- msgpack encoded
 			},
 			indexes = {},
 		})
@@ -194,7 +238,7 @@ return class(function (stowage)
 			columns = {
 				{ name = 'id', type = 'INTEGER PRIMARY KEY AUTOINCREMENT' },
 				{ name = 'key', type = 'TEXT' },
-				{ name = 'value', type = 'TEXT' },
+				{ name = 'data', type = 'TEXT' },		-- msgpack encoded
 			},
 			indexes = {
 				{ columns = { 'key', 'id' }, type = 'INDEX' },
@@ -227,7 +271,10 @@ return class(function (stowage)
 		statements.upsert_value = db:upsert('keys', { 'key', 'value' }):prepare()
 		
 		-- log table statements
-		statements.insert_log = db:insert('log', { 'key', 'value' }):prepare()
+		statements.insert_log = db:insert('log', { 'key', 'data' }):prepare()
+		statements.read_log = db:select('log', 'id, data', { 'key' }):order_by('id', 'asc'):prepare()
+		statements.read_log_from_id = db:select('log', 'id, data', { 'key', 'id >' }):order_by('id', 'asc'):prepare()
+		statements.read_log_with_limit = db:prepare('select id, data from `log` where `key` = ? and `id` > ? order by `id` limit ?')
 		statements.delete_log = db:delete('log', { 'key' }):prepare()
 		statements.delete_log_up_to_id = db:delete('log', { 'key', 'id <='}):prepare()
 		statements.delete_log_id = db:delete('log', { 'key', 'id' }):prepare()
@@ -235,9 +282,13 @@ return class(function (stowage)
 		-- reverse index table statements
 		statements.delete_reverse_key = db:delete('reverse', { 'key' }):prepare()
 		statements.insert_reverse = db:insert('reverse', { 'value', 'key' }):prepare()
-		
 		statements.get_reverse_keys = db:select('reverse', 'key', { 'value' }):prepare()
 		statements.get_reverse_key = db:select('reverse', 'key', { 'value' }):limit(1):prepare()
+		statements.get_reverse_from = db:select('reverse', 'value', { 'value >=' }):limit(1):prepare()
+		
+		-- export keys
+		statements.get_key_from = db:select('keys', 'key', { 'key >=' }):limit(1):prepare()
+		statements.get_keys_from = db:select('keys', 'key', { 'key >=' }):prepare()
 		
 		return statements
 	end

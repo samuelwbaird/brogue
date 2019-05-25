@@ -24,6 +24,16 @@ local result = class(function (result)
 		self:step()
 	end
 	
+	function result:release()
+		if self.statement then
+			self.statement.done = true
+			if self.statement.pool then
+				self.statement.pool:release(self.statement)
+			end
+			self.statement = nil
+		end
+	end
+	
 	function result:step()
 		-- print('step ' .. self.sql_string)
 		local last_step = self.sqlite_statement:step()
@@ -31,10 +41,7 @@ local result = class(function (result)
 		self.has_row = (last_step == sqlite3.ROW)
 		self.error = (not self.done and not self.has_row)
 		if self.done then
-			self.statement.done = true
-			if self.statement.pool then
-				self.statement.pool:release(self.statement)
-			end
+			self:release()
 		end
 		assert(not self.error, 'step: ' .. self.sql_string)
 	end
