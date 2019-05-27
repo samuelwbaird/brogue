@@ -221,6 +221,25 @@ return class(function (stowage)
 		return key
 	end
 	
+	
+	-- proxy sqlite transaction support through to this level as its critical to batch commits in practice
+
+	function stowage:begin_transaction()
+		return self.db:begin_transaction()
+	end
+	
+	function stowage:abort_transaction()
+		return self.db:abort_transaction()
+	end
+	
+	function stowage:commit_transaction()
+		return self.db:commit_transaction()
+	end
+
+	function stowage:transaction(...)
+		return self.db:transaction(...)
+	end
+	
 	-- internal, prepare all sqlite statements required -----------------------------
 	
 	function stowage:prepare_db(db)
