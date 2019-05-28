@@ -182,10 +182,10 @@ return class(function (stowage)
 		return value
 	end
 	
-	-- export keys --------------------------------------------------------------------
+	-- bulk keys --------------------------------------------------------------------
 	
 	-- return all keys for a given key prefiex
-	function stowage:export_keys(prefix)
+	function stowage:get_keys(prefix)
 		local keys = array()
 		local query_result = self.statements.get_keys_from:query({ prefix })
 		for row in query_result:rows() do
@@ -212,7 +212,7 @@ return class(function (stowage)
 		end
 	end
 	
-	-- return the next key that follows a given prefix
+	-- return the next key that matches or follows a given prefix
 	function stowage:next_key(prefix, must_match_prefix)
 		local key = self.statements.get_key_from:query({ prefix }):value()
 		if must_match_prefix and key and key:sub(1, #prefix) ~= prefix then
@@ -221,6 +221,20 @@ return class(function (stowage)
 		return key
 	end
 	
+	-- return the next key after a given key
+	function stowage:key_after_key(key)
+		return self.statements.get_key_after:query({ key }):value()
+	end
+
+	-- enumerate keys in bulk
+	function stowage:keys_after_key(key, limit)
+		local output = array()
+		local query_result = self.statements.get_keys_after:query({ key, limit })
+		for row in query_result:rows() do
+			output:push(row.key)
+		end
+		return output
+	end
 	
 	-- proxy sqlite transaction support through to this level as its critical to batch commits in practice
 
@@ -308,6 +322,9 @@ return class(function (stowage)
 		-- export keys
 		statements.get_key_from = db:select('keys', 'key', { 'key >=' }):limit(1):prepare()
 		statements.get_keys_from = db:select('keys', 'key', { 'key >=' }):prepare()
+
+		statements.get_key_after = db:select('keys', 'key', { 'key >' }):limit(1):prepare()
+		statements.get_keys_after = db:prepare('select key from `keys` where `key` > ? order by `key` limit ?')
 		
 		return statements
 	end
