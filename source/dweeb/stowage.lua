@@ -130,6 +130,18 @@ return class(function (stowage)
 		return output
 	end
 	
+	function stowage:log_read_reverse(key, count)
+		local output = array()
+		local rows = self.statements.read_log_reverse_with_limit:query({ key, count }):rows()
+		for row in rows do
+			output:push({
+				id = row.id,
+				data = cmsgpack.unpack(row.data),
+			})
+		end
+		return output
+	end
+	
 	function stowage:log_clear(key, up_to_log_id)
 		if up_to_log_id then
 			self.statements.delete_log_up_to_id:execute({ key, up_to_log_id })
@@ -307,7 +319,8 @@ return class(function (stowage)
 		statements.insert_log = db:insert('log', { 'key', 'data' }):prepare()
 		statements.read_log = db:select('log', 'id, data', { 'key' }):order_by('id', 'asc'):prepare()
 		statements.read_log_from_id = db:select('log', 'id, data', { 'key', 'id >' }):order_by('id', 'asc'):prepare()
-		statements.read_log_with_limit = db:prepare('select id, data from `log` where `key` = ? and `id` > ? order by `id` limit ?')
+		statements.read_log_with_limit = db:prepare('select id, data from `log` where `key` = ? and `id` > ? order by `id` asc limit ?')
+		statements.read_log_reverse_with_limit = db:prepare('select id, data from `log` where `key` = ? order by `id` desc limit ?')
 		statements.delete_log = db:delete('log', { 'key' }):prepare()
 		statements.delete_log_up_to_id = db:delete('log', { 'key', 'id <='}):prepare()
 		statements.delete_log_id = db:delete('log', { 'key', 'id' }):prepare()
