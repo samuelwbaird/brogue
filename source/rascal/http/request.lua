@@ -16,6 +16,8 @@ local array = require('core.array')
 
 return class(function (request)
 	
+	request.decompress_gzip_body = true
+	
 	function request:init(request_string)
 		self.headers = {}
 		
@@ -64,6 +66,16 @@ return class(function (request)
 				self.url_vars = request.query_vars(self.url_query)
 			end
 		end
+		
+		-- transparently handly unzip if we can
+		if request.decompress_gzip_body then
+			local content_type = self.headers['content-type']
+			if content_type and content_type:find('gzip') then
+				local zlib = require 'zlib'
+				self.headers['content-type'] = self.headers['content-type']:gsub('gzip', '')
+				self.body = zlib.decompress(self.body, 31)
+			end
+		end
 	end
 	
 	function request:reset()
@@ -73,6 +85,7 @@ return class(function (request)
 	-- detect JSON, msgpack, TODO: URL vars, form vars, detect from content without header
 	function request:input()
 		local content_type = self.headers['content-type']
+		
 		if content_type then
 			if content_type:find('application/x-msgpack') or content_type:find('application/msgpack') then
 				return self:msgpack()
