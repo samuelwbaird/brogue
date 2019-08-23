@@ -55,12 +55,14 @@ return module(function (template)
 						source = dynamic_section:sub(3, -3),
 					})
 					
-				-- single bracketed, might be embedded javascript or something
+				-- single bracketed, need to treat the single brack as static content and parse inside the bracket
 				else
+					de = ds -- just add that single open bracket, to make sure the inside of the bracket is parsed
 					sections:push({
 						type = 'static',
-						source = dynamic_section,
+						source = template_source:sub(ds, de),
 					})
+					
 				end
 
 				start = de + 1

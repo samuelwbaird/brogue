@@ -21,8 +21,7 @@ return class(function (response)
 		self.status_code = 200
 		self.keep_alive = request and request.should_keep_alive or false
 		self.accept_type = request.headers['accept-type']
-		self.headers = {
-		}
+		self.headers = {}
 		self.body = nil
 	end
 	
@@ -31,13 +30,33 @@ return class(function (response)
 	end
 	
 	function response:set_header(header, value)
-		self.headers[header:lower()] = tostring(value)
+		header = header:lower()
+		value = tostring(value)
+		for _, header_entry in ipairs(self.headers) do
+			if header_entry.header == header then
+				header_entry.value = value
+				return
+			end
+		end
+		self.headers[#self.headers + 1] = {
+			header = header,
+			value = value
+		}
+	end
+	
+	function response:add_header(header, value)
+		header = header:lower()
+		value = tostring(value)
+		self.headers[#self.headers + 1] = {
+			header = header,
+			value = value
+		}
 	end
 	
 	function response:set_body(body)
 		if body then
 			body = tostring(body)
-			self.headers['content-length'] = #body
+			self:set_header('content-length', #body)
 			self.body = body
 		end
 	end
@@ -64,7 +83,7 @@ return class(function (response)
 	function response:set_mimetype_from_extension(extension)
 		local type = response.mimetypes[extension]
 		if type then
-			self.headers['content-type'] = type
+			self:set_header('content-type', type)
 		end
 	end
 	
@@ -76,8 +95,8 @@ return class(function (response)
 		end
 		
 		h:push('HTTP/1.1 ' .. tostring(self.status_code) .. ' ' .. (response.status_code_text[self.status_code] or ''))
-		for field, value in pairs(self.headers) do
-			h:push(field .. ': ' .. value)
+		for _, header_entry in pairs(self.headers) do
+			h:push(header_entry.header .. ': ' .. header_entry.value)
 		end
 
 		return table.concat(h, '\r\n') .. '\r\n\r\n' .. (self.body or '')

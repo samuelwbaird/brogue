@@ -9,14 +9,7 @@ return class(function (cache)
 
 	function cache:init(retain_size)
 		self.retain_size = tonumber(retain_size) or 0
-		-- weak cache of all values
-		self.weak = setmetatable({}, {
-			__mode = 'kv'
-		})
-		-- hard cache, simple ring buffer for each access
-		-- this means double access is represented twice which might be good or bad
-		self.ring_buffer = {}
-		self.ring_buffer_index = 0
+		self:clear()
 	end
 	
 	function cache:push(key, value)
@@ -26,7 +19,18 @@ return class(function (cache)
 	end
 	
 	function cache:clear(key)
-		self.weak[key] = nil
+		if key then
+			self.weak[key] = nil
+		else
+			-- weak cache of all values
+			self.weak = setmetatable({}, {
+				__mode = 'kv'
+			})
+			-- hard cache, simple ring buffer for each access
+			-- this means double access is represented twice which might be good or bad
+			self.ring_buffer = {}
+			self.ring_buffer_index = 0
+		end
 	end
 	
 	cache.set = cache.push
