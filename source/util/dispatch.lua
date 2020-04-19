@@ -234,6 +234,10 @@ local dispatch = class(function (dispatch)
 	function dispatch:wrap(fn, tag)
 		self:schedule(coroutine.create(fn), tag)
 	end
+
+	function dispatch:is_clear()
+		return self.safe_update:is_clear()
+	end
 	
 	-- update, next round of dispatch/tick/frame
 	local function update_function(entry)
