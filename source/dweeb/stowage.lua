@@ -29,6 +29,9 @@ return class(function (stowage)
 		
 		self.random_suffix_chars = '1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'	
 		self.random_suffix_length = 8
+		
+		self.in_transaction = false
+		self.transaction_is_dirty = false
 	end	
 	
 	function stowage:close()
@@ -37,6 +40,10 @@ return class(function (stowage)
 	
 	-- create a new key, return true if successful (ie. the key does not already exist)
 	function stowage:create(key, initial_value, reverse_values)
+		if self.in_transaction then
+			self.transaction_is_dirty = true
+		end
+		
 		return self.db:transaction(function (db, statements)
 			if statements.has_key:query({ key }).has_row then
 				return false
@@ -75,6 +82,10 @@ return class(function (stowage)
 
 	-- completely remove a key and all its related values
 	function stowage:remove(key)
+		if self.in_transaction then
+			self.transaction_is_dirty = true
+		end
+		
 		self.db:transaction(function (db, statements)
 			statements.delete_value:execute({ key })
 			statements.delete_log:execute({ key })
@@ -92,6 +103,10 @@ return class(function (stowage)
 	
 	-- set the atomic value for this key (and optionally reset the reverse index)
 	function stowage:set_value(key, value, reverse_values)
+		if self.in_transaction then
+			self.transaction_is_dirty = true
+		end
+		
 		self.db:transaction(function (db, statements)
 			statements.upsert_value:execute({ key, cmsgpack.pack(value) })
 			
@@ -108,6 +123,11 @@ return class(function (stowage)
 	
 	function stowage:log_append(key, data)
 		assert(key, 'cannot log to nil key')
+		
+		if self.in_transaction then
+			self.transaction_is_dirty = true
+		end
+		
 		self.statements.insert_log:execute({ key, cmsgpack.pack(data) })
 	end
 	
@@ -143,6 +163,10 @@ return class(function (stowage)
 	end
 	
 	function stowage:log_clear(key, up_to_log_id)
+		if self.in_transaction then
+			self.transaction_is_dirty = true
+		end
+		
 		if up_to_log_id then
 			self.statements.delete_log_up_to_id:execute({ key, up_to_log_id })
 		else
@@ -151,6 +175,10 @@ return class(function (stowage)
 	end
 	
 	function stowage:log_remove(key, log_id)
+		if self.in_transaction then
+			self.transaction_is_dirty = true
+		end
+		
 		self.statements.delete_log_id:execute({ key, log_id })
 	end
 	
@@ -158,6 +186,10 @@ return class(function (stowage)
 	
 	-- set one or many reverse index values pointing to a key
 	function stowage:reverse_set(key, reverse_values)
+		if self.in_transaction then
+			self.transaction_is_dirty = true
+		end
+		
 		self.db:transaction(function (db, statements)
 			statements.delete_reverse_key:execute({ key })
 			for _, value in ipairs(reverse_values) do
@@ -168,6 +200,10 @@ return class(function (stowage)
 	
 	-- remove all reverse references to this key
 	function stowage:reverse_remove(key)
+		if self.in_transaction then
+			self.transaction_is_dirty = true
+		end
+		
 		self.statements.delete_reverse_key:execute({ key })
 	end
 	
@@ -213,6 +249,10 @@ return class(function (stowage)
 	
 	-- remove all keys for a given key prefix
 	function stowage:remove_keys(prefix)
+		if self.in_transaction then
+			self.transaction_is_dirty = true
+		end
+		
 		local query_result = self.statements.get_keys_from:query({ prefix })
 		for row in query_result:rows() do
 			if row.key:sub(1, #prefix) == prefix then
@@ -248,17 +288,45 @@ return class(function (stowage)
 		return output
 	end
 	
+	-- return a lua iterate that iterates over a prefix, transparently batching if required
+	function stowage:iterate_keys(prefix)
+		local key = prefix
+		
+		return function ()
+			key = self:key_after_key(key)
+			-- end of db
+			if not key then
+				return nil
+			end
+			-- prefix no longer matches
+			if key:sub(1, #prefix) ~= prefix then
+				return nil
+			end
+			-- otherwise its the next value
+			return key
+		end
+	end
+	
 	-- proxy sqlite transaction support through to this level as its critical to batch commits in practice
 
 	function stowage:begin_transaction()
+		if self.in_transaction then
+			error('stowage already in transaction state', 2)
+		end
+		self.in_transaction = true
+		self.transaction_is_dirty = false
 		return self.db:begin_transaction()
 	end
 	
 	function stowage:abort_transaction()
+		self.in_transaction = false
+		self.transaction_is_dirty = false
 		return self.db:abort_transaction()
 	end
 	
 	function stowage:commit_transaction()
+		self.in_transaction = false
+		self.transaction_is_dirty = false
 		return self.db:commit_transaction()
 	end
 
