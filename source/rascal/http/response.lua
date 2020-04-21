@@ -53,6 +53,15 @@ return class(function (response)
 		}
 	end
 	
+	function response:get_header(header)
+		header = header:lower()
+		for _, header_entry in ipairs(self.headers) do
+			if header_entry.header == header then
+				return header_entry.value
+			end
+		end
+	end
+	
 	function response:set_body(body)
 		if body then
 			body = tostring(body)
