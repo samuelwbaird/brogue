@@ -95,9 +95,11 @@ return class(function (http_worker)
 				response:set_status(404)
 			end
 		else
-			-- error during processing
-			rascal.log('error', '500 ' .. (request.url_path or '') .. ' ' .. result)
-			response:set_status(500)
+			-- error during processing, preserve an error status if it has been set
+			if math.floor(response.status_code / 100) == 2 then
+				response:set_status(500)
+			end
+			rascal.log('error', response.status_code .. ' ' .. (request.url_path or '') .. ' ' .. result)
 			response:set_body(result)
 		end
 		
