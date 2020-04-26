@@ -18,7 +18,7 @@ log('opening db/silage.sqlite')
 local db = stowage('db/silage.sqlite', true)
 -- create a number of silage worlds
 local worlds = array()
-for i = 1, 1 do
+for i = 1, 4 do
 	db:begin_transaction()
 	-- create a new key in the DB for this silage object
 	local world = db:create_new('world:')

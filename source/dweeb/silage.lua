@@ -57,7 +57,9 @@ return class(function (silage)
 		end
 		
 		-- pairs
-		-- ipairs		
+		-- ipairs
+		-- keys
+		-- values
 		-- remove
 	end)
 
@@ -71,9 +73,51 @@ return class(function (silage)
 		self.entities[1] = self.root
 		
 		-- replay the log to create all entities and load in the required data
+		local log_id = 0
+		local batch_size = 256
+		local function quick_inflate(id)
+			local entity = self.entities[id]
+			if not entity then
+				entity = silage_table(self, id)
+				self.entities[id] = entity
+				if id > self.last_entity_id then
+					self.last_entity_id = id
+				end
+			end
+			return entity
+		end
 		
+		while true do
+			local logs = self.db:log_read(self.db_key, log_id, batch_size)
+			for _, log in ipairs(logs) do
+				-- inflate and assign the objects
+				local event = log.data.event
+				local id = log.data.id
+				local key = log.data.key
+				local value = log.data.value
+				-- inflate tables to entities
+				if type(key) == 'table' then
+					key = quick_inflate(key.id)
+				end
+				if type(value) == 'table' then
+					value = quick_inflate(value.id)
+				end
+				
+				local entity = quick_inflate(id)
+				if event == 'set' then
+					entity._data[key] = value
+				end
+			end
+			if #logs < batch_size then
+				break
+			end
+			log_id = logs[#logs].id
+		end
 		
-		-- TODO: possibly make the entities table a weak table to allow garbage collection after this point
+		-- make the entities table a weak table to allow garbage collection after this point
+		setmetatable(self.entities, {
+			__mode = 'kv'
+		})
 	end
 	
 	-- create and wrap entities --------------------------------------------------------------
@@ -167,9 +211,7 @@ return class(function (silage)
 		end
 		if type(value) == 'table' then
 			value = { id = value._id }
-		end		
-		
-		print(event .. ' ' .. id)
+		end
 		
 		-- deflate for persistence
 		local entry = {
