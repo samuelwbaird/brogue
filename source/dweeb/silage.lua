@@ -15,6 +15,7 @@
 -- copyright 2020 Samuel Baird MIT Licence
 
 local class = require('core.class')
+local array = require('core.array')
 
 return class(function (silage)
 	
@@ -25,13 +26,62 @@ return class(function (silage)
 			rawset(self, '_silage', silage)
 			rawset(self, '_id', entity_id)
 			rawset(self, '_data', {})
+			rawset(self, '_type', 'empty')	-- empty, array, map
 		end
 		
 		function silage_table:create(initial_values)
 			return self._silage:create(initial_values)
 		end
 		
+		function silage_table:push(value)
+			if self._type == 'map' then
+				error('silage, cannot push values on a map type table')
+			end
+			
+			self[#self._data + 1] = value
+		end
+		
+		silage_table.add = silage_table.push
+		
+		function silage_table:insert(index, value)
+			if self._type == 'map' then
+				error('silage, cannot insert values on a map type table')
+			end
+			
+			if self._silage:validate(value) then
+				table.insert(self._data, index, value)
+				self._silage:persist('insert', self._id, index, value)
+			end
+		end
+		
+		function silage_table:remove(index)
+			if self._type == 'map' then
+				error('silage, cannot remove values on a map type table')
+			end
+
+			self._silage:persist('remove', self._id, index)
+			table.remove(self._data, index)
+		end
+		
+		-- metatable hooks ---------------------------------------------------------------
+		
 		function silage_table:__newindex(name, value)
+			-- treat tables as either a map or an array in silage for 'reasons'
+			if self._type == 'empty' then
+				-- find out what kind of table we are
+				if name == 1 then
+					self._type = 'array'
+				else
+					self._type = 'map'
+				end				
+			elseif self._type == 'map' then
+				-- anything goes
+			elseif self._type == 'array' then
+				if name ~= #self._data + 1 then
+					error('silage, cannot treat an array type table as a map')
+				end
+			end
+			
 			-- do not silently wrap objects as it creates a new object that will no longer match references
 			-- but we do need to validate the value is primitive or within the same silage
 			if self._silage:validate(name) and self._silage:validate(value) then
@@ -51,16 +101,83 @@ return class(function (silage)
 				return self._data[name]
 			end
 		end
-		
+				
+		function silage_table:__tostring()
+			return 'entity:' .. self._id .. ':' .. self._type
+		end
+
+		-- stuff we can't properly substitute in lua 5.1 metatables -----------------
+
 		function silage_table:length()
 			return #self._data
 		end
 		
-		-- pairs
-		-- ipairs
-		-- keys
-		-- values
-		-- remove
+		function silage_table:pairs()
+			if self._type == 'array' then
+				error('silage, cannot use pairs on an array type table')
+			end
+			
+			return pairs(self._data)
+		end
+		
+		function silage_table:ipairs()
+			if self._type == 'map' then
+				error('silage, cannot use ipairs on a map type table')
+			end
+			
+			return ipairs(self._data)
+		end
+		
+		function silage_table:iterate()
+			if self._type == 'array' then
+				return ipairs(self._data)
+			else
+				return pairs(self._data)
+			end
+		end
+		
+		function silage_table:keys()
+			-- return an array of all keys, with table objects in order ahead of other properties
+			local output = array()
+			for k, _ in self:iterate() do
+				output:push(k)
+			end
+			return output
+		end
+		
+		function silage_table:values()
+			-- return an array of all values, with table objects in order ahead of other properties
+			local output = array()
+			for _, v in self:iterate() do
+				output:push(v)
+			end
+			return output		
+		end
+		
+		function silage_table:with_each(fn)
+			for _, v in self:iterate() do
+				fn(v)
+			end
+		end
+		
+		function silage_table:filter(filter_fn)
+			local output = array()
+			for _, v in self:iterate() do
+				if filter_fn(v) then
+					output:push(v)
+				end
+			end
+			return output
+		end
+		
+		function silage_table:find(find_fn)
+			for i, v in self:iterate() do
+				if find_fn(v) then
+					return v
+				end
+			end
+		end
+		
 	end)
 
 	function silage:init(db, db_key)
@@ -106,6 +223,10 @@ return class(function (silage)
 				local entity = quick_inflate(id)
 				if event == 'set' then
 					entity._data[key] = value
+				elseif event == 'insert' then
+					table.insert(entity._data, key, value)
+				elseif event == 'remove' then
+					table.remove(entity._data, key)
 				end
 			end
 			if #logs < batch_size then
@@ -175,13 +296,13 @@ return class(function (silage)
 				
 				-- recursively wrap all the keys and values if we can
 				for i, v in ipairs(value) do
-					entity._data[i] = self:wrap(v, error_level + 1)
+					entity[i] = self:wrap(v, error_level + 1)
 				end
 				for k, v in pairs(value) do
 					if type(k) == 'number' and math.floor(k) == k and k >= 1 and k <= #value then
 						-- ignore int value keys already traversed
 					else
-						entity._data[self:wrap(k, error_level + 1)] = self:wrap(v, error_level + 1)
+						entity[self:wrap(k, error_level + 1)] = self:wrap(v, error_level + 1)
 					end
 				end
 				return entity

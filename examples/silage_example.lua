@@ -18,7 +18,7 @@ log('opening db/silage.sqlite')
 local db = stowage('db/silage.sqlite', true)
 -- create a number of silage worlds
 local worlds = array()
-for i = 1, 4 do
+for i = 1, 5 do
 	db:begin_transaction()
 	-- create a new key in the DB for this silage object
 	local world = db:create_new('world:')
@@ -31,10 +31,10 @@ for i = 1, 4 do
 	root.players = root:create()
 	
 	-- create a number of groups
-	for g = 1, 10 do
+	for g = 1, 4 do
 		local group = root:create({ id = 'group:' .. g })
 		group.players = root:create()
-		root.groups[g] = group
+		root.groups:push(group)
 	end
 	
 	-- and a number of players, assign the players to a random group
@@ -42,7 +42,7 @@ for i = 1, 4 do
 		local player = root:create({ id = 'player:' .. p })
 		root.players[player.id] = player
 		player.group = root.groups[math.random(1, root.groups:length())]
-		player.group.players[player.id] = player
+		player.group.players:push(player)
 	end
 	
 	db:commit_transaction()
@@ -52,7 +52,22 @@ end
 for i = 1, #worlds do
 	log('loading ' .. worlds[i])
 	local root = silage(db, worlds[i])
+	for group_id, group in root.groups:ipairs() do
+		log('group ' .. group_id .. ' players: ' .. group.players:length())
+		
+		-- update the data in some way
+		group.players:remove(math.random(1, group.players:length()))
+		group.players:find(function (p) return p.id:find('3') end)
+		group.players:filter(function (p) return p.id:find('3') end):with_each(function (p)
+			p.flag = true
+		end)
+	end	
 end
 
+for i = 1, #worlds do
+	log('loading ' .. worlds[i])
+	local root = silage(db, worlds[i])
+	log('flagged ' .. #root.players:filter(function (p) return p.flag end))
+end
 
 log('done')
