@@ -25,7 +25,11 @@ return module(function (random_key)
 	function random_key.unique_printable(unique_check, length, chars)
 		while true do
 			local key = random_key.printable(length, chars)
-			if unique_check(key) then
+			if type(unique_check) == 'table' then
+				if not unique_check[key] then
+					return key
+				end
+			elseif unique_check(key) then
 				return key
 			end
 		end		

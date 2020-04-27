@@ -33,6 +33,10 @@ return class(function (silage)
 			return self._silage:create(initial_values)
 		end
 		
+		function silage_table:unwrap()
+			return self._silage:unwrap(self)
+		end
+		
 		function silage_table:push(value)
 			if self._type == 'map' then
 				error('silage, cannot push values on a map type table')
@@ -281,7 +285,7 @@ return class(function (silage)
 		elseif t == 'table' then
 			-- check the keys and values of this table recursively
 			local meta = getmetatable(value)
-			if meta == null then
+			if meta == nil then
 				-- create a new entity with this backing and a new entity id
 				local next_entity_id = self.last_entity_id + 1;
 				self:persist('create', next_entity_id)
@@ -296,13 +300,13 @@ return class(function (silage)
 				
 				-- recursively wrap all the keys and values if we can
 				for i, v in ipairs(value) do
-					entity[i] = self:wrap(v, error_level + 1)
+					entity[i] = self:wrap(v, error_level + 1, cycles_table)
 				end
 				for k, v in pairs(value) do
 					if type(k) == 'number' and math.floor(k) == k and k >= 1 and k <= #value then
 						-- ignore int value keys already traversed
 					else
-						entity[self:wrap(k, error_level + 1)] = self:wrap(v, error_level + 1)
+						entity[self:wrap(k, error_level + 1, cycles_table)] = self:wrap(v, error_level + 1, cycles_table)
 					end
 				end
 				return entity
@@ -321,6 +325,28 @@ return class(function (silage)
 		else
 			error('silage does not support ' .. t .. ' keys or values', error_level)		
 		end
+	end
+	
+	function silage:unwrap(value, cycles_table)
+		local t = type(value)
+		if type(value) == 'table' and getmetatable(t) == silage_table then
+			-- remap to capture cycles
+			if not cycles_table then
+				cycles_table = {}
+			end
+			if cycles_table[value] then
+				return cycles_table[value]
+			end			
+			-- recursively unwrap silage tables to plain tables
+			local out = {}
+			cycles_table[value] = out
+			for k, v in self:iterate() do
+				out[self:unwrap(k, cycles_table)] = self:unwrap(v, cycles_table)
+			end
+			return out
+		else
+			return value
+		end		
 	end
 	
 	-- create and wrap entities --------------------------------------------------------------
