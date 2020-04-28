@@ -15,6 +15,7 @@ display_worker_code = false
 -- zeromq modules
 zmq = require('lzmq')
 zloop = require('lzmq.loop')
+ztimer = require('lzmq.timer')
 zthreads = require('lzmq.threads')
 
 -- am I the main thread
@@ -35,6 +36,11 @@ log = function (type, text) error('early log ' .. (type or  '')  .. ' ' .. (text
 
 -- loop for this thread
 loop = zloop.new()
+
+-- global high res time function
+function utc_time()
+	return ztimer.absolute_time() / 1000
+end
 
 -- share simple global values with other threads
 local shared_globals = {}

@@ -116,6 +116,10 @@ return class(function (silage)
 			return #self._data
 		end
 		
+		function silage_table:empty()
+			return next(self._data) == nil
+		end
+		
 		function silage_table:pairs()
 			if self._type == 'array' then
 				error('silage, cannot use pairs on an array type table')

@@ -21,7 +21,7 @@ return class(function (request)
 	function request:init(request_string)
 		self.headers = {}
 		
-		self.time = os.time()
+		self.time = utc_time()
 		
 		-- set a timeout after which long pollling should consider this connection dead
 		-- a short timeout means less chance of sending data to a recycled connection address

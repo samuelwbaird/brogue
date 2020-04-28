@@ -185,7 +185,7 @@ return class(function (http_worker)
 		connection.context.deferred = nil
 
 		-- check its not too stale
-		if connection.request.time + connection.request.timeout < os.time() then
+		if connection.request.time + connection.request.timeout < utc_time() then
 			return
 		end
 		
