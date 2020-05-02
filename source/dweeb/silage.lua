@@ -195,16 +195,18 @@ return class(function (silage)
 		rawset(self, 'entities', {})
 		rawset(self, 'root', silage_table(self, 1))
 		rawset(self, 'last_entity_id', 2)
-		self.entities[1] = self.root
+		
+		local entities = {}
+		entities[1] = self.root
 		
 		-- replay the log to create all entities and load in the required data
 		local log_id = 0
 		local batch_size = 256
 		local function quick_inflate(id)
-			local entity = self.entities[id]
+			local entity = entities[id]
 			if not entity then
 				entity = silage_table(self, id)
-				self.entities[id] = entity
+				entities[id] = entity
 				if id > self.last_entity_id then
 					self.last_entity_id = id
 				end
@@ -242,11 +244,6 @@ return class(function (silage)
 			end
 			log_id = logs[#logs].id
 		end
-		
-		-- make the entities table a weak table to allow garbage collection after this point
-		setmetatable(self.entities, {
-			__mode = 'kv'
-		})
 	end
 	
 	-- create and wrap entities --------------------------------------------------------------
@@ -295,7 +292,6 @@ return class(function (silage)
 				self:persist('create', next_entity_id)
 				self.last_entity_id = next_entity_id
 				local entity = silage_table(self, next_entity_id)
-				self.entities[next_entity_id] = entity
 				if cycles_table then
 					cycles_table[value] = entity
 				else
@@ -373,6 +369,31 @@ return class(function (silage)
 		}		
 		self.db:log_append(self.db_key, entry)
 	end		
+	
+	function silage:rewrite_log()
+		self.db:transaction(function ()
+			self.db:log_clear(self.db_key)
+			-- create a fresh log
+			local entities = {}
+			local function write_entity(entity)
+				if entities[entity._id] then
+					return
+				end
+				entities[entity._id] = true
+				self:persist('create', entity._id)
+				for k, v in entity:iterate() do
+					self:persist('set', entity._id, k, v)
+					if getmetatable(k) == silage_table then
+						write_entity(k)
+					end
+					if getmetatable(v) == silage_table then
+						write_entity(v)
+					end
+				end
+			end
+			write_entity(self.root)
+		end)
+	end
 		
 	-- mapping to root --------------------------------------------------------------
 	

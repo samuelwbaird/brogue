@@ -31,14 +31,14 @@ for i = 1, 5 do
 	root.players = root:create()
 	
 	-- create a number of groups
-	for g = 1, 4 do
+	for g = 1, 10 do
 		local group = root:create({ id = 'group:' .. g })
 		group.players = root:create()
 		root.groups:push(group)
 	end
 	
 	-- and a number of players, assign the players to a random group
-	for p = 1, 100 do
+	for p = 1, 1000 do
 		local player = root:create({ id = 'player:' .. p })
 		root.players[player.id] = player
 		player.group = root.groups[math.random(1, root.groups:length())]
@@ -52,6 +52,7 @@ end
 for i = 1, #worlds do
 	log('loading ' .. worlds[i])
 	local root = silage(db, worlds[i])
+	root:rewrite_log()
 	for group_id, group in root.groups:ipairs() do
 		log('group ' .. group_id .. ' players: ' .. group.players:length())
 		
