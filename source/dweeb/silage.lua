@@ -328,8 +328,7 @@ return class(function (silage)
 	end
 	
 	function silage:unwrap(value, cycles_table)
-		local t = type(value)
-		if type(value) == 'table' and getmetatable(t) == silage_table then
+		if type(value) == 'table' and getmetatable(value) == silage_table then
 			-- remap to capture cycles
 			if not cycles_table then
 				cycles_table = {}
