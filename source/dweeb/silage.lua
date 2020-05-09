@@ -39,7 +39,7 @@ return class(function (silage)
 		
 		function silage_table:push(value)
 			if self._type == 'map' then
-				error('silage, cannot push values on a map type table')
+				error('silage, cannot push values on a map type table', 2)
 			end
 			
 			self[#self._data + 1] = value
@@ -49,7 +49,7 @@ return class(function (silage)
 		
 		function silage_table:insert(index, value)
 			if self._type == 'map' then
-				error('silage, cannot insert values on a map type table')
+				error('silage, cannot insert values on a map type table', 2)
 			end
 			
 			if self._silage:validate(value) then
@@ -60,7 +60,7 @@ return class(function (silage)
 		
 		function silage_table:remove(index)
 			if self._type == 'map' then
-				error('silage, cannot remove values on a map type table')
+				error('silage, cannot remove values on a map type table', 2)
 			end
 
 			self._silage:persist('remove', self._id, index)
@@ -82,7 +82,7 @@ return class(function (silage)
 				-- anything goes
 			elseif self._type == 'array' then
 				if name ~= #self._data + 1 then
-					error('silage, cannot treat an array type table as a map')
+					error('silage, cannot treat an array type table as a map', 2)
 				end
 			end
 			
@@ -233,11 +233,22 @@ return class(function (silage)
 				local entity = quick_inflate(id)
 				if event == 'set' then
 					entity._data[key] = value
+					if entity._type == 'empty' then
+						if key == 1 then
+							entity._type = 'array'
+						else
+							entity._type = 'map'
+						end
+					end
 				elseif event == 'insert' then
 					table.insert(entity._data, key, value)
+					if entity._type == 'empty' then
+						entity._type = 'array'
+					end
 				elseif event == 'remove' then
 					table.remove(entity._data, key)
 				end
+								
 			end
 			if #logs < batch_size then
 				break
