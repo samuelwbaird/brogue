@@ -350,7 +350,7 @@ return class(function (silage)
 			-- recursively unwrap silage tables to plain tables
 			local out = {}
 			cycles_table[value] = out
-			for k, v in self:iterate() do
+			for k, v in value:iterate() do
 				out[self:unwrap(k, cycles_table)] = self:unwrap(v, cycles_table)
 			end
 			return out
