@@ -112,6 +112,9 @@ return class(function (request)
 	end
 	
 	function request.url_decode(str)
+		if not str then
+			return ''
+		end
 		str = string.gsub (str, '+', ' ')
 		str = string.gsub (str, '%%(%x%x)',
 			function(h) return string.char(tonumber(h,16))
