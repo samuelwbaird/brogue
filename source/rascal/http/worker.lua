@@ -52,26 +52,34 @@ return class(function (http_worker)
 		-- tell the worker we're ready
 		self.request_from_router:send('ready')
 		loop:add_socket(self.request_from_router, function (request_from_router)
-			-- wait to be given some work
-			local input = request_from_router:recv_all()
-			if input == nil then
-				return
+			-- wrap all socket handling in a error handler to recover from any failure and continue the loop
+			local success, error = pcall(function ()
+				-- wait to be given some work
+				local input = request_from_router:recv_all()
+				if input == nil then
+					return
+				end
+			
+				local address, body = input[1], input[3]
+				if body == nil then
+					return
+				end
+				-- log('verbose', 'request\n' .. body)
+			
+				-- parse and handle the request body as an http request
+				local request = http_request(body)
+				local response = http_response(request)
+				local context = {
+					address = address,
+					http_worker = self
+				}
+			
+				self:handle_request(request, context, response)
+			end)
+			
+			if not success then
+				log('worker socket error', error)
 			end
-			
-			local address, body = input[1], input[3]
-			if body == nil then
-				return
-			end
-			-- log('verbose', 'request\n' .. body)
-			
-			local request = http_request(body)
-			local response = http_response(request)
-			local context = {
-				address = address,
-				http_worker = self
-			}
-			
-			self:handle_request(request, context, response)
 		
 			-- tell the worker we're ready for more work
 			request_from_router:send('ready')
