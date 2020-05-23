@@ -12,7 +12,7 @@ local cmsgpack = require('cmsgpack')
 -- core modules
 local class = require('core.class')
 local array = require('core.array')
-
+local surly = require('util.surly')
 
 return class(function (request)
 	
@@ -89,6 +89,8 @@ return class(function (request)
 		if content_type then
 			if content_type:find('application/x-msgpack') or content_type:find('application/msgpack') then
 				return self:msgpack()
+			elseif content_type:find('application/x-lua') or content_type:find('application/lua') then
+				return self:lua()
 			end
 		end
 
@@ -102,6 +104,10 @@ return class(function (request)
 	
 	function request:msgpack()
 		return self.body and cmsgpack.unpack(self.body) or {}
+	end
+	
+	function request:lua()
+		return self.body and surly.parse(self.body) or {}
 	end
 	
 	function request:rewrite_url_path(new_url_path)

@@ -7,7 +7,7 @@ return class(function (sandbox)
 		
 	function sandbox:init(available_values)
 		self.globals = {}
-		for k, v in pairs(available_values) do
+		for k, v in pairs(available_values or {}) do
 			self.globals[k] = v
 		end
 	end
@@ -22,7 +22,7 @@ return class(function (sandbox)
 		if not chunk then
 			error(message)
 		end
-		self:execute_fn(chunk)
+		return self:execute_fn(chunk)
 	end
 	
 	function sandbox:execute_file(filename)
@@ -30,7 +30,7 @@ return class(function (sandbox)
 		if not chunk then
 			error(message)
 		end
-		self:execute_fn(chunk)
+		return self:execute_fn(chunk)
 	end
 	
 	function sandbox:execute_fn(chunk)
@@ -39,7 +39,7 @@ return class(function (sandbox)
 		if not result then
 			error('Error in sandbox ' .. message, 2)
 		end
-		return result, message
+		return message
 	end
 	
 end)

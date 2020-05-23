@@ -14,6 +14,7 @@ local cmsgpack = require('cmsgpack')
 -- core modules
 local class = require('core.class')
 local array = require('core.array')
+local surly = require('util.surly')
 
 return class(function (response)
 	
@@ -74,6 +75,8 @@ return class(function (response)
 	function response:set_output(data)
 		if self.accept_type == 'application/msgpack' or self.accept_type == 'application/x-msgpack' then
 			self:set_msgpack(data)
+		elseif self.accept_type == 'application/lua' or self.accept_type == 'application/x-lua' then
+			self:set_lua(data)
 		else
 			self:set_json(data)
 		end
@@ -87,6 +90,11 @@ return class(function (response)
 	function response:set_msgpack(data)
 		self:set_mimetype_from_extension('msgpack')
 		self:set_body(cmsgpack.pack(data))
+	end
+	
+	function response:set_lua(data)
+		self:set_mimetype_from_extension('lua')
+		self:set_body(surly.serialise(data))
 	end
 	
 	function response:set_mimetype_from_extension(extension)
@@ -149,5 +157,6 @@ return class(function (response)
 		['xml'] = 'application/xml',
 		['zip'] = 'application/zip',
 		['msgpack'] = 'application/x-msgpack',
+		['lua'] = 'application/lua',
 	}
 end)
