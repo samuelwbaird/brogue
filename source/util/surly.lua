@@ -43,7 +43,7 @@ return module(function (surly)
 			end
 			output[#output + 1] = '}'
 		elseif t == 'boolean' or t == 'number' then
-			output[#output + 1] = to_string(value)
+			output[#output + 1] = tostring(value)
 		elseif value == nil then
 			output[#output + 1] = 'nil'
 		else
