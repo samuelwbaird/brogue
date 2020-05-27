@@ -272,13 +272,13 @@ return class(function (silage)
 			if meta then
 				if meta == silage_table then
 					if value._silage ~= self then
-						error('silage does allow mixing keys and values in different silages')
+						error('silage does allow mixing keys and values in different silages', 3)
 					end
 				else
-					error('silage does not support tables with other metatables')
+					error('silage does not support tables with other metatables', 3)
 				end
 			else
-				error('cannot set an unwrapped table')
+				error('cannot set an unwrapped table', 3)
 			end
 		end
 		return true
