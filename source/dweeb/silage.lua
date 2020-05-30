@@ -186,6 +186,14 @@ return class(function (silage)
 			end
 		end
 		
+		function silage_table:index_of(value)
+			for i, v in self:iterate() do
+				if v == value then
+					return i
+				end
+			end
+		end
+		
 	end)
 
 	function silage:init(db, db_key)
