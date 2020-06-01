@@ -69,6 +69,14 @@ return class(function (array)
 		return false
 	end
 
+	function array:index_of(member)
+		for i, v in ipairs(self) do
+			if v == member then
+				return i
+			end
+		end
+	end
+
 	-- map, return a transposed array
 	function array:map(fn)
 		local out = array()
