@@ -118,7 +118,7 @@ return module(function (rascal)
 			loop:start(tick_time, tick_function)
 		end)
 		if not complete then
-			log('error', error)
+			log('rascal runloop error', error)
 		end
 		if is_main_thread then
 			rascal.log('shutting down')

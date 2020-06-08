@@ -99,7 +99,7 @@ return class(function (http_worker)
 			end
 			-- did we run to the end of the handler with out it being handled
 			if not result then
-				rascal.log('error', '404 ' .. (request.url_path or ''))
+				rascal.log('http handler error', '404 ' .. (request.url_path or ''))
 				response:set_status(404)
 			end
 		else
@@ -107,7 +107,7 @@ return class(function (http_worker)
 			if math.floor(response.status_code / 100) == 2 then
 				response:set_status(500)
 			end
-			rascal.log('error', response.status_code .. ' ' .. (request.url_path or '') .. ' ' .. result)
+			rascal.log('http handler error', response.status_code .. ' ' .. (request.url_path or '') .. ' ' .. result)
 			response:set_body(result)
 		end
 		

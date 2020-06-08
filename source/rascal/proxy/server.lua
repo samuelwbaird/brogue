@@ -111,8 +111,10 @@ return class(function (proxy)
 			end
 			-- the last two are considered command + params
 			local command = input[#input - 1]
-			local params = cmsgpack.unpack(input[#input])
-
+			local succcess, params = pcall(cmsgpack.unpack, input[#input])
+			if not succcess then
+				log('error unpacking parameters in remote call to ' .. command)
+			end
 			-- call the function via the proxy			
 			if socket_type == zmq.ROUTER then
 				-- the incoming routing is stored as a ref on the proxy
@@ -121,12 +123,12 @@ return class(function (proxy)
 				-- routing is passed in as an additional parameter
 				local success, result = pcall(self[command], self, params)
 				if not success then
-					log('error', result)
+					log('proxy router error on ' .. command, result)
 				end
 			else
 				local success, result = pcall(self[command], self, params)
 				if not success then
-					log('error', result)
+					log('proxy error on ' .. command, result)
 				end
 				-- return the result if required
 				if socket_type == zmq.REP then
