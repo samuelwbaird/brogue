@@ -115,6 +115,13 @@ return class(function (array)
 		return self
 	end
 	
+	function array:shuffle()
+	    for i = #self, 2, -1 do
+	      local j = math.random(i)
+	      self[i], self[j] = self[j], self[i]
+	    end
+	end
+	
 	-- clear
 	function array:clear()
 		local len = #self

@@ -33,6 +33,10 @@ return class(function (silage)
 			return self._silage:create(initial_values)
 		end
 		
+		function silage_table:wrap(table)
+			return self._silage:wrap(table)
+		end
+		
 		function silage_table:unwrap()
 			return self._silage:unwrap(self)
 		end
@@ -116,7 +120,7 @@ return class(function (silage)
 			return #self._data
 		end
 		
-		function silage_table:empty()
+		function silage_table:is_empty()
 			return next(self._data) == nil
 		end
 		
