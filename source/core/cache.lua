@@ -37,7 +37,7 @@ return class(function (cache)
 	
 	function cache:get(key)
 		local value = self.weak[key]
-		if value then
+		if type(value) ~= 'nil' then
 			self:retain(key, value)
 		end
 		return value
@@ -45,7 +45,7 @@ return class(function (cache)
 	
 	function cache:get_or_set(key, create_function, ...)
 		local value = self.weak[key]
-		if value then
+		if type(value) ~= 'nil' then
 			self:retain(key, value)
 			return value
 		end
