@@ -33,6 +33,34 @@ return class(function (silage)
 			return self._silage:create(initial_values)
 		end
 		
+		function silage_table:array(name)
+			local array = self._data[name]
+			if array then
+				if array._type == 'map' then
+					error('silage, cannot treat ' .. name .. ' as array')
+				end
+			else
+				array = self._silage:create()
+				rawset(array, '_type', 'array')
+				self[name] = array
+			end
+			return array
+		end
+		
+		function silage_table:map(name)
+			local map = self._data[name]
+			if map then
+				if map._type == 'array' then
+					error('silage, cannot treat ' .. name .. ' as map')
+				end
+			else
+				map = self._silage:create()
+				rawset(map, '_type', 'map')
+				self[name] = map
+			end
+			return map
+		end
+		
 		function silage_table:wrap(table)
 			return self._silage:wrap(table)
 		end

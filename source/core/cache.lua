@@ -66,4 +66,8 @@ return class(function (cache)
 		end
 	end
 	
+	function cache:pairs()
+		return pairs(self.weak)
+	end
+	
 end)
