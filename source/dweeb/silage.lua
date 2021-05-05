@@ -210,6 +210,10 @@ return class(function (silage)
 			return output
 		end
 		
+		function silage_table:has(key)
+			return type(self._data[key]) ~= 'nil'
+		end
+		
 		function silage_table:find(find_fn)
 			for i, v in self:iterate() do
 				if find_fn(v) then
