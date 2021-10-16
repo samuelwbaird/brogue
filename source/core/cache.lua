@@ -70,4 +70,8 @@ return class(function (cache)
 		return pairs(self.weak)
 	end
 	
+	function cache:remove(key)
+		self.weak[key] = nil
+	end
+	
 end)
