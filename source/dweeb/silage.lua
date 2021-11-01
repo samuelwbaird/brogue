@@ -37,7 +37,7 @@ return class(function (silage)
 			local array = self._data[name]
 			if array then
 				if array._type == 'map' then
-					error('silage, cannot treat ' .. name .. ' as array')
+					error('silage, cannot treat ' .. name .. ' as array', 2)
 				end
 			else
 				array = self._silage:create()
@@ -51,7 +51,7 @@ return class(function (silage)
 			local map = self._data[name]
 			if map then
 				if map._type == 'array' then
-					error('silage, cannot treat ' .. name .. ' as map')
+					error('silage, cannot treat ' .. name .. ' as map', 2)
 				end
 			else
 				map = self._silage:create()
@@ -154,7 +154,7 @@ return class(function (silage)
 		
 		function silage_table:pairs()
 			if self._type == 'array' then
-				error('silage, cannot use pairs on an array type table')
+				error('silage, cannot use pairs on an array type table', 2)
 			end
 			
 			return pairs(self._data)
@@ -162,7 +162,7 @@ return class(function (silage)
 		
 		function silage_table:ipairs()
 			if self._type == 'map' then
-				error('silage, cannot use ipairs on a map type table')
+				error('silage, cannot use ipairs on a map type table', 2)
 			end
 			
 			return ipairs(self._data)
