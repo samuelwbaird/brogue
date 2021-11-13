@@ -77,6 +77,10 @@ return class(function (silage)
 			self[#self._data + 1] = value
 		end
 		
+		function silage_table:push_wrap(value)
+			self:push(self:wrap(value))
+		end
+		
 		silage_table.add = silage_table.push
 		
 		function silage_table:insert(index, value)
