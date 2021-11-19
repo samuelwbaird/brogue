@@ -106,6 +106,11 @@ return class(function (silage)
 		-- metatable hooks ---------------------------------------------------------------
 		
 		function silage_table:__newindex(name, value)
+			-- ignore if nothing has changed
+			if self._data[name] == value then
+				return
+			end
+			
 			-- treat tables as either a map or an array in silage for 'reasons'
 			if self._type == 'empty' then
 				-- find out what kind of table we are
