@@ -34,6 +34,12 @@ return class(function (silage)
 		end
 		
 		function silage_table:array(name)
+			if not name then
+				local array = self._silage:create()
+				rawset(array, '_type', 'array')
+				return array
+			end
+
 			local array = self._data[name]
 			if array then
 				if array._type == 'map' then
@@ -48,6 +54,12 @@ return class(function (silage)
 		end
 		
 		function silage_table:map(name)
+			if not name then
+				local map = self._silage:create()
+				rawset(map, '_type', 'map')
+				return map
+			end
+			
 			local map = self._data[name]
 			if map then
 				if map._type == 'array' then
