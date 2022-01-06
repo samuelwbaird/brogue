@@ -26,9 +26,9 @@ return class(function (array)
 	end
 
 	-- call a function on each element
-	function array:with_each(fn)
+	function array:with_each(fn, ...)
 		for i, v in ipairs(self) do
-			fn(v)
+			fn(v, ...)
 		end
 	end
 	
