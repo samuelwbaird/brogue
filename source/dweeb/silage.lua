@@ -221,16 +221,6 @@ return class(function (silage)
 			end
 		end
 		
-		function silage_table:filter(filter_fn)
-			local output = array()
-			for _, v in self:iterate() do
-				if filter_fn(v) then
-					output:push(v)
-				end
-			end
-			return output
-		end
-		
 		function silage_table:has(key)
 			return type(self._data[key]) ~= 'nil'
 		end
@@ -242,7 +232,17 @@ return class(function (silage)
 				end
 			end
 		end
-		
+				
+		function silage_table:find_all(filter_fn)
+			local output = array()
+			for _, v in self:iterate() do
+				if filter_fn(v) then
+					output:push(v)
+				end
+			end
+			return output
+		end
+
 		function silage_table:index_of(value)
 			for i, v in self:iterate() do
 				if v == value then
@@ -250,6 +250,24 @@ return class(function (silage)
 				end
 			end
 		end
+		
+		function silage_table:remove_where(filter_fn)
+			if self._type == 'map' then
+				error('silage, cannot remove values on a map type table', 2)
+			end
+			
+			local index = 1
+			local length = self:length()
+			
+			while index <= length do
+				if filter_fn(self[index]) then
+					self:remove(index)
+					length = length - 1
+				else
+					index = index + 1
+				end
+			end
+		end		
 		
 	end)
 
