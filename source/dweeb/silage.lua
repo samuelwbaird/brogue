@@ -53,7 +53,7 @@ return class(function (silage)
 			return array
 		end
 		
-		function silage_table:map(name)
+		function silage_table:map(name, initial_values)
 			if not name then
 				local map = self._silage:create()
 				rawset(map, '_type', 'map')
@@ -69,6 +69,11 @@ return class(function (silage)
 				map = self._silage:create()
 				rawset(map, '_type', 'map')
 				self[name] = map
+				if initial_values then
+					for k, v in pairs(initial_values) do
+						map[k] = self:wrap(v)
+					end
+				end
 			end
 			return map
 		end
