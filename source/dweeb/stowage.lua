@@ -1,21 +1,47 @@
--- provides a sort of key value store (with sqlite backing)
--- with very fixed semantics, each database key has:
+-- provides a key value store (with sqlite backing), with extended semantics
+-- 
+-- :: each database "key" has:
+--   an atomic value (this value can be any msgpack encodable value, like a table)
+--   a append log, of immutable entries, the log is sequential and can be cleared
+--   a reverse index, where any number of values can be associated back to this key
 --
--- an atomic value
--- a log, of immutable objects, the log is sequential and can be cleared
--- a reverse index, where any number of values can be linked to a key
+-- :: create new entries in the DB two ways, depending whether the entry is named
+--    and well known, or not. If not then a new key is automatically assigned.
+--    for either method, an initial value and reverse keys, can be optionally assigned when the key is created.
 --
+--   create('named_entry_called_bob')	-- the entry with this exact key is created if it does not exist
+--   create_new('player:')				-- a new entry, with a new key, with the prefix 'player:' is created
+--
+-- :: entries can be removed from the DB, including all logs and reverse index values
+--
+--   remove(key)
+--
+-- :: getting and setting the key value
+--
+--
+-- :: working with the key log
+--
+--
+-- :: working with reverse index
+--
+--
+--
+
+--
+-- enumerating the DB
 -- export methods, not necessarily suitable for direct network access
 -- provide methods to traverse multiple keys
 --
 -- all method are isolated atomic transactions
 --
--- copyright 2019 Samuel Baird MIT Licence
+-- copyright 2022 Samuel Baird MIT Licence
 
 local class = require('core.class')
 local array = require('core.array')
 
+-- sqlite is the backing store
 local sqlite = require('dweeb.sqlite')
+-- msgpack is the encoding of values where required
 local cmsgpack = require('cmsgpack')
 
 return class(function (stowage)

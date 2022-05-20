@@ -2,7 +2,7 @@
 -- copyright 2014 Samuel Baird MIT Licence
 
 -- reference the brogue libraries
-package.path = '../source/?.lua;' .. package.path
+package.path = '../../source/?.lua;' .. package.path
 
 -- demonstrate adding some custom functionality to the basic web server
 -- add a custom chain, that chains access to other handlers
@@ -13,7 +13,7 @@ package.path = '../source/?.lua;' .. package.path
 local rascal = require('rascal.core')
 
 -- configure logging
-rascal.log_service:log_to_file('log/rascal_custom_world.log')
+rascal.log_service:log_to_file('log/rascal_custom_content.log')
 rascal.log_service:log_to_console(true)
 
 -- configure an HTTP server

@@ -2,7 +2,7 @@
 -- copyright 2014 Samuel Baird MIT Licence
 
 -- reference the brogue libraries
-package.path = '../source/?.lua;' .. package.path
+package.path = '../../source/?.lua;' .. package.path
 
 -- demonstrate the basic template for a rascal based server
 -- load and configure rascal

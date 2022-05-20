@@ -59,7 +59,7 @@ for i = 1, #worlds do
 		-- update the data in some way
 		group.players:remove(math.random(1, group.players:length()))
 		group.players:find(function (p) return p.id:find('3') end)
-		group.players:filter(function (p) return p.id:find('3') end):with_each(function (p)
+		group.players:find_all(function (p) return p.id:find('3') end):with_each(function (p)
 			p.flag = true
 		end)
 	end	
@@ -68,7 +68,7 @@ end
 for i = 1, #worlds do
 	log('loading ' .. worlds[i])
 	local root = silage(db, worlds[i])
-	log('flagged ' .. #root.players:filter(function (p) return p.flag end))
+	log('flagged ' .. #root.players:find_all(function (p) return p.flag end))
 end
 
 log('done')

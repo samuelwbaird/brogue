@@ -9,8 +9,8 @@ local sqlite = require('dweeb.sqlite')
 local random_key = require('rascal.util.random_key')
 
 -- open up a database for some testing
-print('opening db/basic_db.sqlite')
-local db = sqlite('db/basic_db.sqlite')		-- nil name = in memory db
+print('opening db/sqlite.sqlite')
+local db = sqlite('db/sqlite.sqlite')		-- nil name = in memory db
 
 -- execute raw sql
 db:exec('DROP TABLE IF EXISTS `codes`')
@@ -29,7 +29,7 @@ db:prepare_table('codes', {
 -- insert a bunch of short random codes into the table for our tests
 -- do this work within a single transaction to improve throughput
 	
-print('insert a large volume short codes into out table')
+print('insert a large volume short codes into a table')
 db:transaction(function ()
 	for i = 1, 200000 do
 		db:insert('codes', {
@@ -88,5 +88,5 @@ end)
 
 -- close db
 db:close()
--- all done, sqlite command line can be used to view the data, eg. sqlite3 db/basic_db.sqlite
+-- all done, sqlite command line can be used to view the data, eg. sqlite3 db/sqlite.sqlite
 print('done')

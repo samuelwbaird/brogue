@@ -1,5 +1,6 @@
 -- example of queue tasks to a task server pool
 -- including multiple yields from a task generating further tasks
+-- these tasks don't do any useful work, but should show the work being spread across 8 threads
 --
 -- copyright 2016 Samuel Baird MIT Licence
 

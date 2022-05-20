@@ -12,7 +12,7 @@
 -- instead of ipairs(table), use table:ipairs()
 -- instead of other array/table methods. use table:remove(index) to remove from a table and shuffle down indexes
 -- 
--- copyright 2020 Samuel Baird MIT Licence
+-- copyright 2022 Samuel Baird MIT Licence
 
 local class = require('core.class')
 local array = require('core.array')
