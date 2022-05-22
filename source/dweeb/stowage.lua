@@ -18,21 +18,41 @@
 --
 -- :: getting and setting the key value
 --
+--   get_value
+--   set_value
 --
 -- :: working with the key log
 --
+--   log_append
+--   log_read
+--   log_read_reverse
+--   log_clear
+--   log_remove
 --
 -- :: working with reverse index
 --
---
---
-
---
+--   reverse_set
+--   reverse_remove
+--   reverse_query
+--   reverse_query_one
+--   reverse_first
+-- 
 -- enumerating the DB
 -- export methods, not necessarily suitable for direct network access
--- provide methods to traverse multiple keys
 --
--- all method are isolated atomic transactions
+--   get_keys
+--   remove_keys
+--   next_key
+--   key_after_key
+--   keys_after_key
+--   iterate_keys
+--
+-- all method are isolated atomic transactions, unless grouped in a larger transaction
+--
+--   begin_transaction
+--   abort_transaction
+--   commit_transaction
+--   transaction(fn)
 --
 -- copyright 2022 Samuel Baird MIT Licence
 

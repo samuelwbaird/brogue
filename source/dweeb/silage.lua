@@ -14,272 +14,363 @@
 -- 
 -- copyright 2022 Samuel Baird MIT Licence
 
+-- silage 			(an object world)
+-- silage_table		(presents as a enhanced lua table that automatically persists itself)
+-- silage_backing	(backing store interface required by each object world)
+
+-- each silage world has a root silage_table, and will map properties and methods to that root by default
+-- each silage also must have a silage_backing backing store
+
+-- interface, silage world root
+local silage_interface = {
+	silage = function (silage_backing) end,	-- construct a silage world with a silage backing
+	silage = function (db, db_key) end,		-- or provide a stowage db and key, to provide the default stowage backing
+	
+	create = function (optional_initial_values) end,	-- create a new silage table within the silage world, with optional initial values
+	wrap = function (lua_value) end,		-- wrap any valid value for silage
+	unwrap = function () end,				-- take an silage table and produce an 'unwrapped' version, a non-silage, copy of the object tree	
+	validate = function (lua_value) end,	-- check if a value can be persisted (ie. primitive value, or table without metadata)
+
+	rewrite_log = function () end,			-- rewrites a fresh version of the log based on the current object state only (could be long running)
+}
+
+-- interface, silage_table
+local silage_table_interface = {
+	create = function (initial_values) end,		-- proxied to the silage root
+	wrap = function (table) end,				-- proxied to the silage root
+	unwrap = function () end,					-- proxied to the silage root, unwrap with this table as the root of the output object
+
+	array = function (name) end,				-- create or retrieve a subobject with this property name or an array type
+	map = function (name, initial_values) end,	-- create or retrieve a subobject with this property name or a map type
+	
+	-- array functions
+	push = function (primitive_or_silage_value) end,	-- add a new value to the end of an array
+	push_wrap = function (lua_value) end,		-- wrap a lua_value into a new silage value and push it
+	add = function (value) end,					-- alias of push	
+	insert = function (index, value) end,		-- insert a value into an array at a specified index
+	remove = function (index) end,				-- remove the value at a specified index (and compact down)
+	length = function () end,					-- return the length of the array
+	ipairs = function () end,					-- return an ipairs iterator for the array content
+	remove_where = function (filter_fn) end,	-- remove entries in the array for which the filter function returns true
+	
+	-- map functions
+	pairs = function () end,					-- return a pairs iterator the the map content
+	
+	-- works with arrays and maps
+	iterate = function () end,					-- return either an ipairs or pairs iterator depending on the type of table
+	keys = function () end, 					-- return an array of all keys, with table objects in order ahead of other properties
+	values = function () end, 					-- return an array of all values, with table objects in order ahead of other properties
+	with_each = function (fn) end,				-- call a function with every value in the table
+	is_empty = function () end,					-- return true if the table has no values set
+	has = function (key) end,					-- return true if the key has a value
+	index_of = function (value) end,			-- return the first key/index for a value (if any)
+	find = function (find_fn) end,				-- returns the first value for which the fn returns true
+	find_all = function (filter_fn) end,		-- returns an array of all values for which the fn returns true
+}
+
+-- interface, silage backing
+local silage_backing_interface = {
+	log_append = function (data) end,						-- append to the history log for this silage
+	log_read = function (from_log_id, max_batch_size) end,	-- read from the history log (in batches)
+	log_clear = function () end,							-- clear the entire history log
+	transaction = function (fn_operations) end,				-- perform 
+}
+
 local class = require('core.class')
 local array = require('core.array')
 
-return class(function (silage)
+-- silage table, each table value within a silage root
+local silage_table = class(function (silage_table)
+	function silage_table:init(silage, entity_id)
+		-- private values
+		rawset(self, '_silage', silage)
+		rawset(self, '_id', entity_id)
+		rawset(self, '_data', {})
+		rawset(self, '_type', 'empty')	-- empty, array, map
+	end
 	
-	-- inner class to handle wrapped tables
-	local silage_table = class(function (silage_table)
-		function silage_table:init(silage, entity_id)
-			-- private values
-			rawset(self, '_silage', silage)
-			rawset(self, '_id', entity_id)
-			rawset(self, '_data', {})
-			rawset(self, '_type', 'empty')	-- empty, array, map
-		end
-		
-		function silage_table:create(initial_values)
-			return self._silage:create(initial_values)
-		end
-		
-		function silage_table:array(name)
-			if not name then
-				local array = self._silage:create()
-				rawset(array, '_type', 'array')
-				return array
-			end
-
-			local array = self._data[name]
-			if array then
-				if array._type == 'map' then
-					error('silage, cannot treat ' .. name .. ' as array', 2)
-				end
-			else
-				array = self._silage:create()
-				rawset(array, '_type', 'array')
-				self[name] = array
-			end
+	function silage_table:create(initial_values)
+		return self._silage:create(initial_values)
+	end
+	
+	function silage_table:array(name)
+		if not name then
+			local array = self._silage:create()
+			rawset(array, '_type', 'array')
 			return array
 		end
-		
-		function silage_table:map(name, initial_values)
-			if not name then
-				local map = self._silage:create()
-				rawset(map, '_type', 'map')
-				return map
+
+		local array = self._data[name]
+		if array then
+			if array._type == 'map' then
+				error('silage, cannot treat ' .. name .. ' as array', 2)
 			end
-			
-			local map = self._data[name]
-			if map then
-				if map._type == 'array' then
-					error('silage, cannot treat ' .. name .. ' as map', 2)
-				end
-			else
-				map = self._silage:create()
-				rawset(map, '_type', 'map')
-				self[name] = map
-				if initial_values then
-					for k, v in pairs(initial_values) do
-						map[k] = self:wrap(v)
-					end
-				end
-			end
+		else
+			array = self._silage:create()
+			rawset(array, '_type', 'array')
+			self[name] = array
+		end
+		return array
+	end
+	
+	function silage_table:map(name, initial_values)
+		if not name then
+			local map = self._silage:create()
+			rawset(map, '_type', 'map')
 			return map
 		end
 		
-		function silage_table:wrap(table)
-			return self._silage:wrap(table)
-		end
-		
-		function silage_table:unwrap()
-			return self._silage:unwrap(self)
-		end
-		
-		function silage_table:push(value)
-			if self._type == 'map' then
-				error('silage, cannot push values on a map type table', 2)
+		local map = self._data[name]
+		if map then
+			if map._type == 'array' then
+				error('silage, cannot treat ' .. name .. ' as map', 2)
 			end
-			
-			self[#self._data + 1] = value
-		end
-		
-		function silage_table:push_wrap(value)
-			self:push(self:wrap(value))
-		end
-		
-		silage_table.add = silage_table.push
-		
-		function silage_table:insert(index, value)
-			if self._type == 'map' then
-				error('silage, cannot insert values on a map type table', 2)
-			end
-			
-			if self._silage:validate(value) then
-				table.insert(self._data, index, value)
-				self._silage:persist('insert', self._id, index, value)
-			end
-		end
-		
-		function silage_table:remove(index)
-			if self._type == 'map' then
-				error('silage, cannot remove values on a map type table', 2)
-			end
-
-			self._silage:persist('remove', self._id, index)
-			table.remove(self._data, index)
-		end
-		
-		-- metatable hooks ---------------------------------------------------------------
-		
-		function silage_table:__newindex(name, value)
-			-- ignore if nothing has changed
-			if self._data[name] == value then
-				return
-			end
-			
-			-- treat tables as either a map or an array in silage for 'reasons'
-			if self._type == 'empty' then
-				-- find out what kind of table we are
-				if name == 1 then
-					self._type = 'array'
-				else
-					self._type = 'map'
-				end				
-			elseif self._type == 'map' then
-				-- anything goes
-			elseif self._type == 'array' then
-				if name ~= #self._data + 1 then
-					error('silage, cannot treat an array type table as a map', 2)
+		else
+			map = self._silage:create()
+			rawset(map, '_type', 'map')
+			self[name] = map
+			if initial_values then
+				for k, v in pairs(initial_values) do
+					map[k] = self:wrap(v)
 				end
 			end
-			
-			-- do not silently wrap objects as it creates a new object that will no longer match references
-			-- but we do need to validate the value is primitive or within the same silage
-			if self._silage:validate(name) and self._silage:validate(value) then
-				self._silage:persist('set', self._id, name, value)
-				self._data[name] = value
-			end
+		end
+		return map
+	end
+	
+	function silage_table:wrap(table)
+		return self._silage:wrap(table)
+	end
+	
+	function silage_table:unwrap()
+		return self._silage:unwrap(self)
+	end
+	
+	function silage_table:push(value)
+		if self._type == 'map' then
+			error('silage, cannot push values on a map type table', 2)
 		end
 		
-		function silage_table:__index(name)
-			-- handle normal class properties
-			if silage_table[name] then
-				return silage_table[name]
-			end
-			
-			-- otherwise defer to persistent properties
-			if self._data[name] then
-				return self._data[name]
-			end
+		self[#self._data + 1] = value
+	end
+	
+	function silage_table:push_wrap(value)
+		self:push(self:wrap(value))
+	end
+	
+	silage_table.add = silage_table.push
+	
+	function silage_table:insert(index, value)
+		if self._type == 'map' then
+			error('silage, cannot insert values on a map type table', 2)
 		end
-				
-		function silage_table:__tostring()
-			return 'entity:' .. self._id .. ':' .. self._type
+		
+		if self._silage:validate(value) then
+			table.insert(self._data, index, value)
+			self._silage:persist('insert', self._id, index, value)
+		end
+	end
+	
+	function silage_table:remove(index)
+		if self._type == 'map' then
+			error('silage, cannot remove values on a map type table', 2)
 		end
 
-		-- stuff we can't properly substitute in lua 5.1 metatables -----------------
-
-		function silage_table:length()
-			return #self._data
+		self._silage:persist('remove', self._id, index)
+		table.remove(self._data, index)
+	end
+	
+	-- metatable hooks ---------------------------------------------------------------
+	
+	function silage_table:__newindex(name, value)
+		-- ignore if nothing has changed
+		if self._data[name] == value then
+			return
 		end
 		
-		function silage_table:is_empty()
-			return next(self._data) == nil
-		end
-		
-		function silage_table:pairs()
-			if self._type == 'array' then
-				error('silage, cannot use pairs on an array type table', 2)
+		-- treat tables as either a map or an array in silage for 'reasons'
+		if self._type == 'empty' then
+			-- find out what kind of table we are
+			if name == 1 then
+				self._type = 'array'
+			else
+				self._type = 'map'
+			end				
+		elseif self._type == 'map' then
+			-- anything goes
+		elseif self._type == 'array' then
+			if name ~= #self._data + 1 then
+				error('silage, cannot treat an array type table as a map', 2)
 			end
+		end
+		
+		-- do not silently wrap objects as it creates a new object that will no longer match references
+		-- but we do need to validate the value is primitive or within the same silage
+		if self._silage:validate(name) and self._silage:validate(value) then
+			self._silage:persist('set', self._id, name, value)
+			self._data[name] = value
+		end
+	end
+	
+	function silage_table:__index(name)
+		-- handle normal class properties
+		if silage_table[name] then
+			return silage_table[name]
+		end
+		
+		-- otherwise defer to persistent properties
+		if self._data[name] then
+			return self._data[name]
+		end
+	end
 			
+	function silage_table:__tostring()
+		return 'entity:' .. self._id .. ':' .. self._type
+	end
+
+	-- stuff we can't properly substitute in lua 5.1 metatables -----------------
+
+	function silage_table:length()
+		return #self._data
+	end
+	
+	function silage_table:is_empty()
+		return next(self._data) == nil
+	end
+	
+	function silage_table:pairs()
+		if self._type == 'array' then
+			error('silage, cannot use pairs on an array type table', 2)
+		end
+		
+		return pairs(self._data)
+	end
+	
+	function silage_table:ipairs()
+		if self._type == 'map' then
+			error('silage, cannot use ipairs on a map type table', 2)
+		end
+		
+		return ipairs(self._data)
+	end
+	
+	function silage_table:iterate()
+		if self._type == 'array' then
+			return ipairs(self._data)
+		else
 			return pairs(self._data)
 		end
-		
-		function silage_table:ipairs()
-			if self._type == 'map' then
-				error('silage, cannot use ipairs on a map type table', 2)
+	end
+	
+	function silage_table:keys()
+		-- return an array of all keys, with table objects in order ahead of other properties
+		local output = array()
+		for k, _ in self:iterate() do
+			output:push(k)
+		end
+		return output
+	end
+	
+	function silage_table:values()
+		-- return an array of all values, with table objects in order ahead of other properties
+		local output = array()
+		for _, v in self:iterate() do
+			output:push(v)
+		end
+		return output		
+	end
+	
+	function silage_table:with_each(fn)
+		for _, v in self:iterate() do
+			fn(v)
+		end
+	end
+	
+	function silage_table:has(key)
+		return type(self._data[key]) ~= 'nil'
+	end
+	
+	function silage_table:find(find_fn)
+		for i, v in self:iterate() do
+			if find_fn(v) then
+				return v
 			end
+		end
+	end
 			
-			return ipairs(self._data)
-		end
-		
-		function silage_table:iterate()
-			if self._type == 'array' then
-				return ipairs(self._data)
-			else
-				return pairs(self._data)
-			end
-		end
-		
-		function silage_table:keys()
-			-- return an array of all keys, with table objects in order ahead of other properties
-			local output = array()
-			for k, _ in self:iterate() do
-				output:push(k)
-			end
-			return output
-		end
-		
-		function silage_table:values()
-			-- return an array of all values, with table objects in order ahead of other properties
-			local output = array()
-			for _, v in self:iterate() do
+	function silage_table:find_all(filter_fn)
+		local output = array()
+		for _, v in self:iterate() do
+			if filter_fn(v) then
 				output:push(v)
 			end
-			return output		
 		end
-		
-		function silage_table:with_each(fn)
-			for _, v in self:iterate() do
-				fn(v)
-			end
-		end
-		
-		function silage_table:has(key)
-			return type(self._data[key]) ~= 'nil'
-		end
-		
-		function silage_table:find(find_fn)
-			for i, v in self:iterate() do
-				if find_fn(v) then
-					return v
-				end
-			end
-		end
-				
-		function silage_table:find_all(filter_fn)
-			local output = array()
-			for _, v in self:iterate() do
-				if filter_fn(v) then
-					output:push(v)
-				end
-			end
-			return output
-		end
+		return output
+	end
 
-		function silage_table:index_of(value)
-			for i, v in self:iterate() do
-				if v == value then
-					return i
-				end
+	function silage_table:index_of(value)
+		for i, v in self:iterate() do
+			if v == value then
+				return i
 			end
 		end
+	end
+	
+	function silage_table:remove_where(filter_fn)
+		if self._type == 'map' then
+			error('silage, cannot remove values on a map type table', 2)
+		end
 		
-		function silage_table:remove_where(filter_fn)
-			if self._type == 'map' then
-				error('silage, cannot remove values on a map type table', 2)
-			end
-			
-			local index = 1
-			local length = self:length()
-			
-			while index <= length do
-				if filter_fn(self[index]) then
-					self:remove(index)
-					length = length - 1
-				else
-					index = index + 1
-				end
-			end
-		end		
+		local index = 1
+		local length = self:length()
 		
-	end)
+		while index <= length do
+			if filter_fn(self[index]) then
+				self:remove(index)
+				length = length - 1
+			else
+				index = index + 1
+			end
+		end
+	end		
+	
+end)
 
-	function silage:init(db, db_key)
+local stowage_backing = class(function (stowage_backing)
+	function stowage_backing:init(db, db_key)
+		self.db = db
+		self.db_key = db_key
+	end
+	
+	function stowage_backing:log_append(data) 
+		return self.db:log_append(self.db_key, data)
+	end
+	
+	function stowage_backing:log_read(from_log_id, max_batch_size)
+		return self.db:log_read(self.db_key, from_log_id, max_batch_size)
+	end
+	
+	function stowage_backing:log_clear()
+		return self.db:log_clear(self.db_key)
+	end
+	
+	function stowage_backing:transaction(fn_operations)
+		return self.db:transaction(fn_operations)		
+	end
+end)
+
+
+local silage = class(function (silage)
+
+	function silage:init(stowagedb_or_backing, db_key)
+		-- set up the backing, assume stowage backing must be constructed if we were supplied a db_key
+		if db_key then
+			rawset(self, 'backing', stowage_backing(stowagedb_or_backing, db_key))
+		else
+			rawset(self, 'backing', stowagedb_or_backing)
+		end
+		
 		-- set up root objects and mappings (avoiding metatable)
-		rawset(self, 'db', db)
-		rawset(self, 'db_key', db_key)
 		rawset(self, 'entities', {})
 		rawset(self, 'root', silage_table(self, 1))
 		rawset(self, 'last_entity_id', 2)
@@ -302,8 +393,9 @@ return class(function (silage)
 			return entity
 		end
 		
+		-- replay the history log
 		while true do
-			local logs = self.db:log_read(self.db_key, log_id, batch_size)
+			local logs = self.backing:log_read(log_id, batch_size)
 			for _, log in ipairs(logs) do
 				-- inflate and assign the objects
 				local event = log.data.event
@@ -465,12 +557,12 @@ return class(function (silage)
 			key = key,
 			value = value
 		}		
-		self.db:log_append(self.db_key, entry)
+		self.backing:log_append(entry)
 	end		
 	
 	function silage:rewrite_log()
-		self.db:transaction(function ()
-			self.db:log_clear(self.db_key)
+		self.backing:transaction(function ()
+			self.backing:log_clear()
 			-- create a fresh log
 			local entities = {}
 			local function write_entity(entity)
@@ -511,3 +603,10 @@ return class(function (silage)
 		return self.root[name]
 	end
 end)
+
+-- set up some references to other classes if needed
+	
+-- allow access through the class to backing constructors
+silage.stowage_backing = stowage_backing
+
+return silage
