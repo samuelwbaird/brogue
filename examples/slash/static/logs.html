@@ -1,0 +1,34 @@
+<html>
+<head>
+		<meta charset="UTF-8">
+		<title>Slash - Open Logging</title>
+		<link href="css/style.css" rel="stylesheet">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+<h1 id="title">App</h1>
+<!-- download logs-->
+<p>Live logs:</p>
+<div id="logs"><p>loading...</p></div>
+
+<div id="templates" style="display:none;">
+	<div id="template_app"" style="margin: 10px;"">
+	<a href=""><span class="app_id" style="display: inline-block; min-width: 200px;">App ID</span></a>
+	<span class="date" style="display: inline-block; min-width: 200px; text-align:right;"/>Date</span>
+	</div>
+</div>
+
+<script type="module">
+	// get the app id from the query params
+	let searchParams = new URLSearchParams(window.location.search);
+	const app_id = searchParams.get('app_id');
+	const device_id = searchParams.get('device_id');
+	document.getElementById('title').innerText = 'App: ' + app_id + ' Device: ' + device_id;
+	
+	import * as slash from './js/slash.js';
+	slash.monitor_logs('logs', app_id, device_id);
+</script>
+
+</body>
+</html>
+

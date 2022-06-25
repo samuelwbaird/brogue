@@ -83,11 +83,31 @@ function update_app_list (element_id) {
 	setInterval(update, 3000);
 }
 
-function update_device_list (element_id) {
+function update_device_list (element_id, app_id) {
 	// this one loads immediately and then on a basic polling timer
+	const parent = document.getElementById(element_id);
+	const update = () => {
+		query.get('api/devices/' + app_id, (json_data) => {
+			// create table output
+			if (Array.isArray(json_data)) {
+				parent.innerHTML = '';
+				for (const device of json_data) {
+					const date = new Date(device.time * 1000);
+					const line = clone_template('template_app', [
+						[ '.app_id', 'innerText', device.device_id ],
+						[ '.date', 'innerText', date ],
+						[ 'a', 'href', 'logs.html?app_id=' + app_id + '&device_id=' + device.device_id],
+					]);
+					parent.appendChild(line);
+				}
+			}
+		}, (failure) => {})		
+	}
+	update();
+	setInterval(update, 3000);
 }
 
-function monitor_logs (element_id) {
+function monitor_logs (element_id, app_id, device_id) {
 	
 }
 
