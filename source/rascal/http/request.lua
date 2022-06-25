@@ -82,6 +82,14 @@ return class(function (request)
 		self.url_path = self.original_url_path or self.url_path
 	end
 	
+	function request:path_slugs()
+		local output = array()
+		for slug in self.url_path:gmatch('([^/]+)') do
+			output:push(slug)
+		end
+		return output
+	end
+	
 	-- detect JSON, msgpack, TODO: URL vars, form vars, detect from content without header
 	function request:input()
 		local content_type = self.headers['content-type']

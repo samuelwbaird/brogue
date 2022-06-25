@@ -1,0 +1,50 @@
+<html>
+<head>
+		<meta charset="UTF-8">
+		<title>Slash - Open Logging</title>
+		<link href="css/style.css" rel="stylesheet">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+<h1>Open Logging Relay</h1>
+<p>Slash is an open relay for debug log messages. Everything about it is wildly innappropriate for any kind of production use.<br>
+<ul>
+	<li>Received logs are not persisted</li>
+	<li>Clients self identify, with a self assigned app and device ID</li>
+	<li>Logs can be shared over HTTP get or post</li>
+	<li>There is a built in web UI to monitor incoming logs</li>
+</ul>
+<p>
+<h2>Active apps</h2>
+<p>The following apps have recently logged data.<p>
+<div id="app_list"><p>loading...</p></div>
+<h2>Implementation</h2>
+<h3>IDs</h3>
+<p>
+<ul>
+	<li>App IDs are self assigned, and must be between 4 and 40 characters in length</li>
+	<li>Individual device IDs are also self assigned, and must be between 8 and 40 characters in length</li>
+	<li>A GUID is an appropriate device ID</li>
+	<li>All IDs must contain only alphanumeric ascii characters, and - or _ (dash or underscore)</li>
+</ul>
+</p>
+<h3>How to log using curl</h3>
+<h3>How to log using Javascript</h3>
+<h3>How to log using C#</h3>
+
+
+<div id="templates" style="display:none;">
+	<div id="template_app"" style="margin: 10px;"">
+	<a href=""><span class="app_id" style="display: inline-block; min-width: 200px;">App ID</span></a>
+	<span class="date" style="display: inline-block; min-width: 200px; text-align:right;"/>Date</span>
+	</div>
+</div>
+
+<script type="module">
+	import * as slash from './js/slash.js';
+	slash.update_app_list('app_list');
+</script>
+
+</body>
+</html>
+
