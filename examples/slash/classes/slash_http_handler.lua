@@ -31,20 +31,20 @@ return class(function (slash_http_handler)
 	function slash_http_handler:handle(request, context, response)
 		local path = request.url_path
 		
-		self.slash_service_push:push_log('slash_http_handler', 'on_the_server', path)
-		
 		-- handle api calls
 		if path:sub(1, 4) == 'api/' then
 			-- break out the name of the world from the URL
 			local prefix, method, app_id, device_id, extra = unpack(request:path_slugs())
 			if method == 'apps' or method == 'devices' or method == 'logs' or method == 'push' then
 				local success, api_result = pcall(self['api_' .. method], self, app_id, device_id, extra, request, context, response)
-				if success then
+				if context.deferred then
+					-- do nothing, this query will need to re-run later
+				elseif success then
 					response:set_status(200)
 					response:set_output(api_result)
 					return true
 				else
-					log(path .. ', error during synchronous api call, ' .. tostring(api_result) or '')
+					log(path .. ', error during api call, ' .. tostring(api_result) or '')
 					response:set_status(400)
 					return true
 				end
@@ -67,6 +67,23 @@ return class(function (slash_http_handler)
 	end
 	
 	function slash_http_handler:api_logs(app_id, device_id, extra, request, context, response)
+		-- read last scene from a URL slug if it exists
+		local last_seen_no = tonumber(extra) or 0
+		local logs = self.slash_service_request:read_logs(app_id, device_id, last_seen_no)
+		
+		-- nothing to read, so defer for long polling
+		if logs and #logs == 0 and not context.deferred_once then
+			context.deferred_once = true
+			worker:defer(':' .. app_id .. ':' .. device_id, request, context, response, function ()
+				-- timeout
+				response:set_output({})
+				return true
+			end)		
+			-- successfully deferred
+			return
+		end
+		
+		return logs
 	end
 		
 	function slash_http_handler:api_push(app_id, device_id, extra, request, context, response)

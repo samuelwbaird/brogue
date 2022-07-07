@@ -85,7 +85,7 @@ return class(function (request)
 	function request:path_slugs()
 		local output = array()
 		for slug in self.url_path:gmatch('([^/]+)') do
-			output:push(slug)
+			output:push(request.url_decode(slug))
 		end
 		return output
 	end

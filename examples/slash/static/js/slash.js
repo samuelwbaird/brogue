@@ -108,6 +108,37 @@ function update_device_list (element_id, app_id) {
 }
 
 function monitor_logs (element_id, app_id, device_id) {
+	const parent = document.getElementById(element_id);
+	parent.innerHTML = '';
+
+	let last_seen = 0;
+	const update = () => {
+		query.get('api/logs/' + app_id + '/' + device_id + '/' + last_seen, (json_data) => {
+			if (Array.isArray(json_data)) {
+				for (const log of json_data) {
+					const log_text = (typeof log.log_value == 'string') ? log.log_value : JSON.stringify(log.log_value)
+					
+					const line = clone_template('template_log', [
+						[ '.log', 'innerText', new Date(log.time * 1000) + ' ' + log_text],
+					]);
+					parent.appendChild(line);
+					if (log.no > last_seen) {
+						last_seen = log.no;
+					}
+				}
+			}
+			// resize and scroll
+			const bounds = parent.getBoundingClientRect();			
+			parent.style.height = (window.innerHeight - bounds.top - 10) + 'px';
+			// scroll to bottom automatically
+			parent.scrollTop = parent.scrollHeight;
+			
+			setTimeout(update, 0)
+		}, (failure) => {
+			setTimeout(update, 1000)
+		})		
+	}
+	update();
 	
 }
 

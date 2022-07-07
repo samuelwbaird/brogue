@@ -29,9 +29,54 @@
 </ul>
 </p>
 <h3>How to log using curl</h3>
+<code>
+#log simple events with a GET<br>
+curl http://localhost:8080/api/push/my_app_id/my_device_id/some%20url%20encoded%20log%20data
+<br><br>
+#send multiple logs at once a POST json bundle<br>
+curl -H "Content-Type:  application/json" --data "{\"logs\":[\"log 1\", \"log 2\"]}" http://localhost:8080/api/push/my_app_id/my_device_id/
+</code>
 <h3>How to log using Javascript</h3>
-<h3>How to log using C#</h3>
+<pre>
+// set up your app id and self assigned device id
+let app_id = 'my_js_app';
+// self assign and reuse a random device id
+let device_id = window.localStorage.getItem('slash_device_id');
+if (device_id == null) {
+	device_id = Math.random().toString(36).substr(2);
+	window.localStorage.setItem('slash_device_id', device_id)
+}
+let url = 'http://localhost:8080/api/push/' + app_id + '/' + device_id
 
+// collect logs to send a few at a time
+let logs = [];
+
+function log(value) {
+	logs.push(value);
+}
+
+function send_logs() {
+	if (logs.length == 0) {
+		return;
+	}
+
+	const xhr = new XMLHttpRequest();
+	xhr.open('post', url, true);
+	xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
+	xhr.send(JSON.stringify({
+		logs: logs
+	}));
+
+	logs = [];
+}
+
+log('some text');
+log({ object: 'some object' });
+send_logs();
+
+log('keep logging more stuff');
+send_logs();
+</pre>
 
 <div id="templates" style="display:none;">
 	<div id="template_app"" style="margin: 10px;"">

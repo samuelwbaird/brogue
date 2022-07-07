@@ -5,16 +5,15 @@
 		<link href="css/style.css" rel="stylesheet">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
-<body>
+<body style="overflow: hidden;">
 <h1 id="title">App</h1>
 <!-- download logs-->
 <p>Live logs:</p>
-<div id="logs"><p>loading...</p></div>
+<div id="logs" style="overflow: scroll;"><p>loading...</p></div>
 
 <div id="templates" style="display:none;">
-	<div id="template_app"" style="margin: 10px;"">
-	<a href=""><span class="app_id" style="display: inline-block; min-width: 200px;">App ID</span></a>
-	<span class="date" style="display: inline-block; min-width: 200px; text-align:right;"/>Date</span>
+	<div id="template_log"" style="margin: 0px;"">
+		<pre style="margin: 0px;" class="log">log</pre>
 	</div>
 </div>
 

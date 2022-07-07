@@ -60,12 +60,14 @@ return class(function (slash_service)
 	end
 	
 	function slash_service:update_app_and_device_list()
+		local count_devices = 0
 		-- create a freshly ordered list
 		self.app_and_device_list = {}
 		local app_list = array()
 		for app_id, devices in pairs(self.logs_by_app) do
 			local devices_by_time = array()
 			for device_id, logs in pairs(devices) do
+				count_devices = count_devices + 1
 				devices_by_time:push({
 					device_id = device_id,
 					time = logs[#logs].time,
@@ -84,6 +86,9 @@ return class(function (slash_service)
 			return d1.time > d2.time
 		end)
 		self.app_and_device_list[''] = app_list
+		
+		-- example data logged by the service itself
+		self:push_log('slash', 'slash_service', #app_list .. ' apps ' .. count_devices .. ' devices present')
 	end
 	
 	function slash_service:expire_logs()
