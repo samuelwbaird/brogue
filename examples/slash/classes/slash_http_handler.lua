@@ -6,12 +6,16 @@ local array = require('core.array')
 local cache = require('core.cache')
 
 local rascal = require('rascal.core')
+local template = require('rascal.util.template')
 local static_handler = require('rascal.http.static_handler')
 
 return class(function (slash_http_handler)
 
-	function slash_http_handler:init(static_path, cache_seconds)
+	function slash_http_handler:init(static_path, cache_seconds, base_url)
 		self.static_path = static_path
+		self.index_template = template.from_file(static_path .. 'index.html')({
+			base_url = base_url,
+		})
 		
 		-- cache static entries
 		self.cache = cache()
@@ -52,6 +56,11 @@ return class(function (slash_http_handler)
 				response:set_status(404)
 				return true
 			end
+		end
+		
+		if path == '' then
+			response:set_body(self.index_template)
+			return true
 		end
 		
 		-- otherwise see if it can be served as static content

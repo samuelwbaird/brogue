@@ -25,7 +25,7 @@ rascal.service('classes.slash_service', { log_retain_seconds, endpoint_prefix })
 rascal.http_server('tcp://*:8080', http_worker_threads, [[
 	prefix('/', {
 		-- serve everything from here
-		handler('classes.slash_http_handler', { 'static/', ]] .. static_cache_seconds .. [[ }),
+		handler('classes.slash_http_handler', { 'static/', ]] .. static_cache_seconds .. [[, 'http://localhost:8080' }),
 		
 		-- otherwise use server static files, defaulting to index.html
 		static('static/', 'index.html', false),

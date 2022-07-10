@@ -31,10 +31,10 @@
 <h3>How to log using curl</h3>
 <code>
 #log simple events with a GET<br>
-curl http://localhost:8080/api/push/my_app_id/my_device_id/some%20url%20encoded%20log%20data
+curl {{base_url}}/api/push/my_app_id/my_device_id/some%20url%20encoded%20log%20data
 <br><br>
 #send multiple logs at once a POST json bundle<br>
-curl -H "Content-Type:  application/json" --data "{\"logs\":[\"log 1\", \"log 2\"]}" http://localhost:8080/api/push/my_app_id/my_device_id/
+curl -H "Content-Type:  application/json" --data "{\"logs\":[\"log 1\", \"log 2\"]}" {{base_url}}/api/push/my_app_id/my_device_id/
 </code>
 <h3>How to log using Javascript</h3>
 <pre>
@@ -46,7 +46,7 @@ if (device_id == null) {
 	device_id = Math.random().toString(36).substr(2);
 	window.localStorage.setItem('slash_device_id', device_id)
 }
-let url = 'http://localhost:8080/api/push/' + app_id + '/' + device_id
+let url = '{{base_url}}/api/push/' + app_id + '/' + device_id
 
 // collect logs to send a few at a time
 let logs = [];
