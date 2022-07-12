@@ -37,6 +37,15 @@ return class(function (slash_http_handler)
 		
 		-- handle api calls
 		if path:sub(1, 4) == 'api/' then
+			-- allow cross origin logging from other sites
+			response:set_header('Access-Control-Allow-Origin', '*')
+			response:set_header('Access-Control-Allow-Headers', 'CONTENT-TYPE')
+			response:set_header('Access-Control-Allow-Methods', 'GET, POST', 'OPTIONS')
+			if request.method:lower() == 'options' then
+				response:set_status(200)
+				return true
+			end
+			
 			-- break out the name of the world from the URL
 			local prefix, method, app_id, device_id, extra = unpack(request:path_slugs())
 			if method == 'apps' or method == 'devices' or method == 'logs' or method == 'push' then
