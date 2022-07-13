@@ -96,7 +96,7 @@ return class(function (slash_service)
 		for app_id, devices in pairs(self.logs_by_app) do
 			local empty = true
 			for device_id, logs in pairs(devices) do
-				while logs[1].time < cutoff do
+				while #logs > 0 and logs[1].time < cutoff do
 					logs:remove(1)
 				end				
 				if #logs > 0 then

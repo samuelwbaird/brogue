@@ -33,7 +33,7 @@ return module(function (rascal)
 			[[-- require the service and instantiate a standard class with args]],
 			[[local service = require(class_name) (unpack(cmsgpack.unpack(class_args)))]],
 			[[log('service', class_name)]],
-			[[rascal.run_loop()]],
+			[[rascal.run_loop(true)]],
 		}, {
 			class_name = class_name,
 			class_args = cmsgpack.pack(class_args or {})
@@ -59,7 +59,7 @@ return module(function (rascal)
 				[[proxy_server = require('rascal.proxy.server')]],
 				[[local http_worker = require('rascal.http.worker')]],
 				[[local worker = http_worker(configuration, worker_request_address, push_reply_address, worker_id)]],
-				[[rascal.run_loop()]],
+				[[rascal.run_loop(true)]],
 			}, {
 				configuration = configuration,
 				worker_request_address = worker_request_address,
@@ -72,7 +72,7 @@ return module(function (rascal)
 			[[local rascal = require('rascal.core')]],
 			[[local http_server = require('rascal.http.server')]],
 			[[http_server.bind(address, worker_request_address, push_reply_address)]],
-			[[rascal.run_loop()]],
+			[[rascal.run_loop(true)]],
 		}, {
 			address = address, 
 			worker_request_address = worker_request_address,
@@ -113,17 +113,20 @@ return module(function (rascal)
 	-- main loop --------------------------------------------------------------------------------------------
 	
 	-- run the main loop for this thread
-	function rascal.run_loop(tick_time, tick_function)
-		local complete, error = pcall(function ()
-			loop:start(tick_time, tick_function)
-		end)
-		if not complete then
-			log('rascal runloop error', error)
-		end
-		if is_main_thread then
-			rascal.log('shutting down')
-			loop:poll(100)
-			ctx:term()
-		end
+	function rascal.run_loop(restart_on_error, tick_time, tick_function)
+		repeat
+			local complete, error = pcall(function ()
+				loop:start(tick_time, tick_function)
+			end)
+			if not complete then
+				log('rascal runloop error', error)
+			end
+			if is_main_thread then
+				rascal.log('shutting down')
+				loop:poll(100)
+				ctx:term()
+				return
+			end
+		until not restart_on_error
 	end
 end)
