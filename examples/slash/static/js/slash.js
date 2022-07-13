@@ -47,7 +47,8 @@ const query = {
 };
 
 function clone_template (element_id, subs) {
-	const clone = document.getElementById(element_id).cloneNode(true);
+	const element = document.getElementById(element_id);
+	const clone = (element.tagName == "TEMPLATE") ? element.content.firstElementChild.cloneNode(true) : element.cloneNode(true);
 	clone.id = null;
 	if (Array.isArray(subs)) {
 		for (const sub of subs) {
