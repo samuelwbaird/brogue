@@ -107,7 +107,7 @@ return class(function (slash_service)
 			end
 			if empty then
 				self.logs_by_app[app_id] = nil
-				self.last_devices_update[app_id] = nil
+				self.app_and_device_list[app_id] = nil
 			end
 		end
 	end
