@@ -106,6 +106,17 @@ return class(function (request)
 		return self:json()
 	end
 	
+	function request:update_input(body_object)
+		if content_type:find('application/x-msgpack') or content_type:find('application/msgpack') then
+			self.body = cmsgpack.pack(body_object or {})
+		elseif content_type:find('application/x-lua') or content_type:find('application/lua') then
+			self.body = surly.serialise(body_object or {})
+		else
+			-- default to json
+			self.body = cjson.encode(body_object or {})
+		end
+	end
+	
 	function request:json()
 		return self.body and cjson.decode(self.body) or {}
 	end
@@ -123,6 +134,11 @@ return class(function (request)
 			self.original_url_path = self.url_path
 		end
 		self.url_path = new_url_path or ''
+	end
+	
+	function request:add_url_var(key, value)
+		self.url_vars = self.url_vars or {}
+		self.url_vars[key] = value
 	end
 	
 	function request.url_decode(str)
