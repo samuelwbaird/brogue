@@ -134,7 +134,7 @@ function monitor_logs (element_id, app_id, device_id) {
 			// scroll to bottom automatically
 			parent.scrollTop = parent.scrollHeight;
 			
-			setTimeout(update, 0)
+			setTimeout(update, 100)
 		}, (failure) => {
 			setTimeout(update, 1000)
 		})		
