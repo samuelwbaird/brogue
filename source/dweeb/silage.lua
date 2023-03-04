@@ -607,6 +607,7 @@ end)
 -- set up some references to other classes if needed
 	
 -- allow access through the class to backing constructors
+silage.silage_table = silage_table
 silage.stowage_backing = stowage_backing
 
 return silage
