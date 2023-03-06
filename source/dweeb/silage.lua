@@ -87,6 +87,7 @@ local silage_table = class(function (silage_table)
 		rawset(self, '_id', entity_id)
 		rawset(self, '_data', {})
 		rawset(self, '_type', 'empty')	-- empty, array, map
+		rawset(silage.entities, entity_id, self)
 	end
 	
 	function silage_table:create(initial_values)
@@ -371,10 +372,13 @@ local silage = class(function (silage)
 		end
 		
 		-- set up root objects and mappings (avoiding metatable)
-		rawset(self, 'entities', {})
+		rawset(self, 'entities', setmetatable({}, {
+			__mode = 'kv'
+		}))
 		rawset(self, 'root', silage_table(self, 1))
 		rawset(self, 'last_entity_id', 2)
 		
+		-- temp mapping during inflation
 		local entities = {}
 		entities[1] = self.root
 		
@@ -562,8 +566,9 @@ local silage = class(function (silage)
 	
 	function silage:rewrite_log()
 		self.backing:transaction(function ()
-			self.backing:log_clear()
 			-- create a fresh log
+			self.backing:log_clear()
+			-- temp mapping to prevent duplicaiton during rewrite
 			local entities = {}
 			local function write_entity(entity)
 				if entities[entity._id] then
