@@ -27,13 +27,13 @@ for i = 1, 5 do
 	-- create an in memory set of objects to work with
 	log('creating ' .. world)
 	local root = silage(db, world)
-	root.groups = root:create()
+	root.groups = root:array()
 	root.players = root:create()
 	
 	-- create a number of groups
 	for g = 1, 10 do
 		local group = root:create({ id = 'group:' .. g })
-		group.players = root:create()
+		group.players = root:array()
 		root.groups:push(group)
 	end
 	
@@ -53,6 +53,8 @@ for i = 1, #worlds do
 	log('loading ' .. worlds[i])
 	local root = silage(db, worlds[i])
 	root:rewrite_log()
+	-- reload after rewrite
+	-- root = silage(db, worlds[i])
 	for group_id, group in root.groups:ipairs() do
 		log('group ' .. group_id .. ' players: ' .. group.players:length())
 		

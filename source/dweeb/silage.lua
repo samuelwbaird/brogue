@@ -21,6 +21,13 @@
 -- each silage world has a root silage_table, and will map properties and methods to that root by default
 -- each silage also must have a silage_backing backing store
 
+-- all update/log entry types
+-- map		(map_id)
+-- array	(array_id)
+-- set		(map_id|array_id, field, value)
+-- insert	(array_id, index, value)
+-- remove	(array_id, index)
+
 -- interface, silage world root
 local silage_interface = {
 	silage = function (silage_backing) end,	-- construct a silage world with a silage backing
@@ -81,12 +88,12 @@ local array = require('core.array')
 
 -- silage table, each table value within a silage root
 local silage_table = class(function (silage_table)
-	function silage_table:init(silage, entity_id)
+	function silage_table:init(silage, entity_id, type)
 		-- private values
 		rawset(self, '_silage', silage)
 		rawset(self, '_id', entity_id)
 		rawset(self, '_data', {})
-		rawset(self, '_type', 'empty')	-- empty, array, map
+		rawset(self, '_type', type or 'map')	-- array, map
 		rawset(silage.entities, entity_id, self)
 	end
 	
@@ -96,9 +103,7 @@ local silage_table = class(function (silage_table)
 	
 	function silage_table:array(name)
 		if not name then
-			local array = self._silage:create()
-			rawset(array, '_type', 'array')
-			return array
+			return self._silage:array()
 		end
 
 		local array = self._data[name]
@@ -107,18 +112,15 @@ local silage_table = class(function (silage_table)
 				error('silage, cannot treat ' .. name .. ' as array', 2)
 			end
 		else
-			array = self._silage:create()
-			rawset(array, '_type', 'array')
+			array = self._silage:array()
 			self[name] = array
 		end
 		return array
 	end
 	
-	function silage_table:map(name, initial_values)
+	function silage_table:map(name)
 		if not name then
-			local map = self._silage:create()
-			rawset(map, '_type', 'map')
-			return map
+			return self._silage:map()
 		end
 		
 		local map = self._data[name]
@@ -127,14 +129,8 @@ local silage_table = class(function (silage_table)
 				error('silage, cannot treat ' .. name .. ' as map', 2)
 			end
 		else
-			map = self._silage:create()
-			rawset(map, '_type', 'map')
+			map = self._silage:map()
 			self[name] = map
-			if initial_values then
-				for k, v in pairs(initial_values) do
-					map[k] = self:wrap(v)
-				end
-			end
 		end
 		return map
 	end
@@ -190,14 +186,7 @@ local silage_table = class(function (silage_table)
 		end
 		
 		-- treat tables as either a map or an array in silage for 'reasons'
-		if self._type == 'empty' then
-			-- find out what kind of table we are
-			if name == 1 then
-				self._type = 'array'
-			else
-				self._type = 'map'
-			end				
-		elseif self._type == 'map' then
+		if self._type == 'map' then
 			-- anything goes
 		elseif self._type == 'array' then
 			if name ~= #self._data + 1 then
@@ -375,21 +364,28 @@ local silage = class(function (silage)
 		rawset(self, 'entities', setmetatable({}, {
 			__mode = 'kv'
 		}))
-		rawset(self, 'root', silage_table(self, 1))
+		rawset(self, 'root', silage_table(self, 1, 'map'))
 		rawset(self, 'last_entity_id', 2)
-		
-		-- temp mapping during inflation
-		local entities = {}
-		entities[1] = self.root
 		
 		-- replay the log to create all entities and load in the required data
 		local log_id = 0
 		local batch_size = 256
-		local function quick_inflate(id)
-			local entity = entities[id]
-			if not entity then
-				entity = silage_table(self, id)
-				entities[id] = entity
+		-- we need a non weakly referenced collection to use for the duration until inflation is complete
+		local inflate_entities = {
+			[1] = self.root
+		}
+		local function inflate(id, type)
+			local entity = inflate_entities[id]
+			if entity then
+				if type and entity._type ~= type then
+					error('type mismatch on reload', 2)
+				end
+			else
+				if type == nil then
+					error('assign out of sequence', 2)
+				end
+				entity = silage_table(self, id, type)
+				inflate_entities[id] = entity
 				if id > self.last_entity_id then
 					self.last_entity_id = id
 				end
@@ -406,31 +402,26 @@ local silage = class(function (silage)
 				local id = log.data.id
 				local key = log.data.key
 				local value = log.data.value
-				-- inflate tables to entities
-				if type(key) == 'table' then
-					key = quick_inflate(key.id)
-				end
-				if type(value) == 'table' then
-					value = quick_inflate(value.id)
-				end
-				
-				local entity = quick_inflate(id)
-				if event == 'set' then
-					entity._data[key] = value
-					if entity._type == 'empty' then
-						if key == 1 then
-							entity._type = 'array'
-						else
-							entity._type = 'map'
-						end
+
+				if event == 'map' then
+					inflate(id, 'map')
+				elseif event == 'array' then
+					inflate(id, 'array')
+				else 
+					-- inflate tables to entities
+					if type(key) == 'table' then
+						key = inflate(key.id)
 					end
-				elseif event == 'insert' then
-					table.insert(entity._data, key, value)
-					if entity._type == 'empty' then
-						entity._type = 'array'
+					if type(value) == 'table' then
+						value = inflate(value.id)
 					end
-				elseif event == 'remove' then
-					table.remove(entity._data, key)
+					if event == 'set' then
+						inflate(id)._data[key] = value
+					elseif event == 'insert' then
+						table.insert(inflate(id, 'array')._data, key, value)
+					elseif event == 'remove' then
+						table.remove(inflate(id, 'array')._data, key)
+					end
 				end
 								
 			end
@@ -442,9 +433,18 @@ local silage = class(function (silage)
 	end
 	
 	-- create and wrap entities --------------------------------------------------------------
-	
-	function silage:create(initial_values)
+		
+	function silage:map(initial_values)
 		return self:wrap(initial_values or {})
+	end
+	
+	silage.create = silage.map	-- default to create maps
+	
+	function silage:array()
+		local next_entity_id = self.last_entity_id + 1;
+		self:persist('array', next_entity_id)
+		self.last_entity_id = next_entity_id
+		return silage_table(self, next_entity_id, 'array')
 	end
 	
 	function silage:validate(value)
@@ -483,28 +483,33 @@ local silage = class(function (silage)
 			local meta = getmetatable(value)
 			if meta == nil then
 				-- create a new entity with this backing and a new entity id
+				cycles_table = cycles_table or {}
 				local next_entity_id = self.last_entity_id + 1;
-				self:persist('create', next_entity_id)
-				self.last_entity_id = next_entity_id
-				local entity = silage_table(self, next_entity_id)
-				if cycles_table then
+				if #value > 0 then
+					self:persist('array', next_entity_id)
+					self.last_entity_id = next_entity_id
+					local entity = silage_table(self, next_entity_id, 'array')
 					cycles_table[value] = entity
-				else
-					cycles_table = { value = entity }
-				end
-				
-				-- recursively wrap all the keys and values if we can
-				for i, v in ipairs(value) do
-					entity[i] = self:wrap(v, error_level + 1, cycles_table)
-				end
-				for k, v in pairs(value) do
-					if type(k) == 'number' and math.floor(k) == k and k >= 1 and k <= #value then
-						-- ignore int value keys already traversed
-					else
-						entity[self:wrap(k, error_level + 1, cycles_table)] = self:wrap(v, error_level + 1, cycles_table)
+					-- recursively wrap all entries
+					for i, v in ipairs(value) do
+						entity[i] = self:wrap(v, error_level + 1, cycles_table)
 					end
+					return entity
+				else
+					self:persist('map', next_entity_id)
+					self.last_entity_id = next_entity_id
+					local entity = silage_table(self, next_entity_id, 'map')
+					cycles_table[value] = entity
+					-- recursively wrap all the keys and values if we can
+					for k, v in pairs(value) do
+						if type(k) == 'number' and math.floor(k) == k and k >= 1 and k <= #value then
+							-- ignore int value keys already traversed
+						else
+							entity[self:wrap(k, error_level + 1, cycles_table)] = self:wrap(v, error_level + 1, cycles_table)
+						end
+					end
+					return entity
 				end
-				return entity
 			else
 				if meta == silage_table then
 					if value._silage == self then
@@ -575,15 +580,19 @@ local silage = class(function (silage)
 					return
 				end
 				entities[entity._id] = true
-				self:persist('create', entity._id)
+				if entity._type == 'array' then
+					self:persist('array', entity._id)					
+				else
+					self:persist('map', entity._id)
+				end
 				for k, v in entity:iterate() do
-					self:persist('set', entity._id, k, v)
 					if getmetatable(k) == silage_table then
 						write_entity(k)
 					end
 					if getmetatable(v) == silage_table then
 						write_entity(v)
 					end
+					self:persist('set', entity._id, k, v)
 				end
 			end
 			write_entity(self.root)
