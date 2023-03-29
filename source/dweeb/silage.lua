@@ -86,6 +86,9 @@ local silage_backing_interface = {
 local class = require('core.class')
 local array = require('core.array')
 
+-- marker object to indicate empty table that should be treated as an array
+local create_as_empty_array = {}
+
 -- silage table, each table value within a silage root
 local silage_table = class(function (silage_table)
 	function silage_table:init(silage, entity_id, type)
@@ -98,12 +101,12 @@ local silage_table = class(function (silage_table)
 	end
 	
 	function silage_table:create(initial_values)
-		return self._silage:create(initial_values)
+		return self._silage:wrap(initial_values or {})
 	end
 	
 	function silage_table:array(name)
 		if not name then
-			return self._silage:array()
+			return self._silage:wrap(create_as_empty_array)
 		end
 
 		local array = self._data[name]
@@ -112,7 +115,7 @@ local silage_table = class(function (silage_table)
 				error('silage, cannot treat ' .. name .. ' as array', 2)
 			end
 		else
-			array = self._silage:array()
+			array = self._silage:wrap(create_as_empty_array)
 			self[name] = array
 		end
 		return array
@@ -120,7 +123,7 @@ local silage_table = class(function (silage_table)
 	
 	function silage_table:map(name)
 		if not name then
-			return self._silage:map()
+			return self._silage:wrap({})
 		end
 		
 		local map = self._data[name]
@@ -129,7 +132,7 @@ local silage_table = class(function (silage_table)
 				error('silage, cannot treat ' .. name .. ' as map', 2)
 			end
 		else
-			map = self._silage:map()
+			map = self._silage:wrap({})
 			self[name] = map
 		end
 		return map
@@ -433,18 +436,17 @@ local silage = class(function (silage)
 	end
 	
 	-- create and wrap entities --------------------------------------------------------------
-		
-	function silage:map(initial_values)
-		return self:wrap(initial_values or {})
+	
+	function silage:create(initial_values)
+		return self.root:create(initial_values)
+	end
+
+	function silage:map(name)
+		return self.root:map(name)
 	end
 	
-	silage.create = silage.map	-- default to create maps
-	
 	function silage:array()
-		local next_entity_id = self.last_entity_id + 1;
-		self:persist('array', next_entity_id)
-		self.last_entity_id = next_entity_id
-		return silage_table(self, next_entity_id, 'array')
+		return self.root:array()
 	end
 	
 	function silage:validate(value)
@@ -485,7 +487,7 @@ local silage = class(function (silage)
 				-- create a new entity with this backing and a new entity id
 				cycles_table = cycles_table or {}
 				local next_entity_id = self.last_entity_id + 1;
-				if #value > 0 then
+				if value == create_as_empty_array or #value > 0 then
 					self:persist('array', next_entity_id)
 					self.last_entity_id = next_entity_id
 					local entity = silage_table(self, next_entity_id, 'array')
