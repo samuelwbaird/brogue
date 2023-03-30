@@ -437,16 +437,16 @@ local silage = class(function (silage)
 	
 	-- create and wrap entities --------------------------------------------------------------
 	
-	function silage:create(initial_values)
-		return self.root:create(initial_values)
+	function silage:create(...)
+		return self.root:create(...)
 	end
 
-	function silage:map(name)
-		return self.root:map(name)
+	function silage:map(...)
+		return self.root:map(...)
 	end
 	
-	function silage:array()
-		return self.root:array()
+	function silage:array(...)
+		return self.root:array(...)
 	end
 	
 	function silage:validate(value)
