@@ -104,6 +104,12 @@ return class(function (response)
 		end
 	end
 	
+	function response:redirect(location)
+		self:set_status(303)
+		self:set_header('Location', location)
+		return true
+	end
+	
 	function response:__tostring()
 		local h = array()
 		
