@@ -180,6 +180,18 @@ local silage_table = class(function (silage_table)
 		table.remove(self._data, index)
 	end
 	
+	function silage_table:clear()
+		if self._type == 'map' then
+			for k, v in self:iterate() do
+				self[k] = nil
+			end
+		else
+			for n = self:length(), 1, -1 do
+				self:remove(n)
+			end
+		end
+	end
+	
 	-- metatable hooks ---------------------------------------------------------------
 	
 	function silage_table:__newindex(name, value)
@@ -255,6 +267,22 @@ local silage_table = class(function (silage_table)
 		end
 	end
 	
+	function silage_table:iterate_random()
+		local keys = {}
+		for k, _ in self:iterate() do
+			keys[#keys + 1] = k
+		end
+		return function ()
+			if #keys == 0 then
+				return
+			end
+			local index = math.random(1, #keys)
+			local key = keys[index]
+			table.remove(keys, index)
+			return key, self._data[key]
+		end
+	end
+	
 	function silage_table:keys()
 		-- return an array of all keys, with table objects in order ahead of other properties
 		local output = array()
@@ -300,7 +328,35 @@ local silage_table = class(function (silage_table)
 		end
 		return output
 	end
-
+	
+	-- count (where meets predicate)
+	function silage_table:count(filter_fn)
+		local count = 0
+		for _, v in self:iterate() do
+			if (filter_fn == nil) or filter_fn(v) then
+				count = count + 1
+			end
+		end
+		return count
+	end
+	
+	function silage_table:sum(filter_fn)
+		local count = 0
+		for _, v in self:iterate() do
+			if filter_fn then
+				local result = filter_fn(v)
+				if tonumber(result) then
+					count = count + tonumber(result)
+				elseif result then
+					count = count + 1
+				end
+			else
+				count = count + (tonumber(v) or 0)
+			end
+		end
+		return count
+	end
+	
 	function silage_table:index_of(value)
 		for i, v in self:iterate() do
 			if v == value then

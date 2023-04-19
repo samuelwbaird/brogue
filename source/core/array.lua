@@ -32,6 +32,11 @@ return class(function (array)
 		end
 	end
 	
+	-- return the natural k,v iterator (ipairs)
+	function array:iterate()
+		return ipairs(self)
+	end
+	
 	-- length as a function
 	function array:length()
 		return #self
@@ -95,6 +100,34 @@ return class(function (array)
 			end
 		end
 		return out
+	end
+	
+	-- count (where meets predicate)
+	function array:count(fn)
+		local count = 0
+		for _, v in ipairs(self) do
+			if (fn == nil) or fn(v) then
+				count = count + 1
+			end
+		end
+		return count
+	end
+	
+	function array:sum(fn)
+		local count = 0
+		for _, v in ipairs(self) do
+			if fn then
+				local result = fn(v)
+				if tonumber(result) then
+					count = count + tonumber(result)
+				elseif result then
+					count = count + 1
+				end
+			else
+				count = count + (tonumber(v) or 0)
+			end
+		end
+		return count
 	end
 	
 	-- update (mutate or remove each entry from function)
@@ -212,7 +245,7 @@ return class(function (array)
 		end
 		return out
 	end
-
+	
 	-- aliases
 	array.add = array.push_back
 	array.push = array.push_back
