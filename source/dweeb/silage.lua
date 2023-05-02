@@ -437,11 +437,11 @@ local silage = class(function (silage)
 			local entity = inflate_entities[id]
 			if entity then
 				if type and entity._type ~= type then
-					error('type mismatch on reload', 2)
+					error('type mismatch on reload [' .. db_key .. ']', 2)
 				end
 			else
 				if type == nil then
-					error('assign out of sequence', 2)
+					error('assign out of sequence [' .. db_key .. ']', 2)
 				end
 				entity = silage_table(self, id, type)
 				inflate_entities[id] = entity
