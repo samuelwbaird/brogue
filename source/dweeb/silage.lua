@@ -329,6 +329,19 @@ local silage_table = class(function (silage_table)
 		return output
 	end
 	
+	function silage_table:transform_values(transform_fn)
+		local out
+		if self._type == 'array' then
+			out = array()
+		else
+			out = {}
+		end
+		for k, v in self:iterate() do
+			out[k] = transform_fn(v)
+		end
+		return out
+	end
+	
 	-- count (where meets predicate)
 	function silage_table:count(filter_fn)
 		local count = 0

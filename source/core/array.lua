@@ -212,6 +212,13 @@ return class(function (array)
 		return self
 	end
 
+	function array:random_element()
+		if #self == 0 then
+			return nil
+		end
+		return self[math.random(1, #self)]
+	end
+
 	-- return a coroutine that will iterate through all permutations of array ordering
 	function array:permutations()
 		return coroutine.wrap(function()
