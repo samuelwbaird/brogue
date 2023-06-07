@@ -329,6 +329,18 @@ local silage_table = class(function (silage_table)
 		return output
 	end
 	
+	function silage_table:random_element()
+		if self:is_empty() then
+			return nil
+		end
+		
+		if self._type == 'array' then
+			return self._data[math.random(1, #self._data)]
+		else
+			return self:values():random_element()
+		end
+	end
+	
 	function silage_table:transform_values(transform_fn)
 		local out
 		if self._type == 'array' then
