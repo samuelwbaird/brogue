@@ -39,10 +39,10 @@ function _query (method, url, data, successHandler, errorHandler, timeout) {
 // public api
 const query = {
 	post: function (url, data, successHandler, errorHandler) {
-		return _query('post', url, data, successHandler, errorHandler);
+		return _query('post', url, data, successHandler, errorHandler, 30000);
 	},
 	get: function (url, successHandler, errorHandler) {
-		return _query('get', url, null, successHandler, errorHandler);
+		return _query('get', url + '?nocache=' + Date.now(), null, successHandler, errorHandler, 30000);
 	},
 };
 
@@ -133,7 +133,6 @@ function monitor_logs (element_id, app_id, device_id) {
 			parent.style.height = (window.innerHeight - bounds.top - 10) + 'px';
 			// scroll to bottom automatically
 			parent.scrollTop = parent.scrollHeight;
-			
 			setTimeout(update, 100)
 		}, (failure) => {
 			setTimeout(update, 1000)
