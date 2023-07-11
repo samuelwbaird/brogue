@@ -48,7 +48,7 @@ const query = {
 
 function clone_template (element_id, subs) {
 	const element = document.getElementById(element_id);
-	const clone = (element.tagName == "TEMPLATE") ? element.content.firstElementChild.cloneNode(true) : element.cloneNode(true);
+	const clone = (element.tagName == 'TEMPLATE') ? element.content.firstElementChild.cloneNode(true) : element.cloneNode(true);
 	clone.id = null;
 	if (Array.isArray(subs)) {
 		for (const sub of subs) {
@@ -71,15 +71,15 @@ function update_app_list (element_id) {
 				for (const app of json_data) {
 					const date = new Date(app.time * 1000);
 					const line = clone_template('template_app', [
-						[ '.app_id', 'innerText', app.app_id ],
-						[ '.date', 'innerText', date ],
-						[ 'a', 'href', 'app.html?app_id=' + app.app_id ],
+						['.app_id', 'innerText', app.app_id],
+						['.date', 'innerText', date],
+						['a', 'href', 'app.html?app_id=' + app.app_id],
 					]);
 					parent.appendChild(line);
 				}
 			}
-		}, (failure) => {})		
-	}
+		}, (failure) => {});
+	};
 	update();
 	setInterval(update, 3000);
 }
@@ -95,15 +95,15 @@ function update_device_list (element_id, app_id) {
 				for (const device of json_data) {
 					const date = new Date(device.time * 1000);
 					const line = clone_template('template_app', [
-						[ '.app_id', 'innerText', device.device_id ],
-						[ '.date', 'innerText', date ],
-						[ 'a', 'href', 'logs.html?app_id=' + app_id + '&device_id=' + device.device_id],
+						['.app_id', 'innerText', device.device_id],
+						['.date', 'innerText', date],
+						['a', 'href', 'logs.html?app_id=' + app_id + '&device_id=' + device.device_id],
 					]);
 					parent.appendChild(line);
 				}
 			}
-		}, (failure) => {})		
-	}
+		}, (failure) => {});
+	};
 	update();
 	setInterval(update, 3000);
 }
@@ -117,10 +117,10 @@ function monitor_logs (element_id, app_id, device_id) {
 		query.get('api/logs/' + app_id + '/' + device_id + '/' + last_seen, (json_data) => {
 			if (Array.isArray(json_data)) {
 				for (const log of json_data) {
-					const log_text = (typeof log.log_value == 'string') ? log.log_value : JSON.stringify(log.log_value)
-					
+					const log_text = (typeof log.log_value == 'string') ? log.log_value : JSON.stringify(log.log_value);
+
 					const line = clone_template('template_log', [
-						[ '.log', 'innerText', new Date(log.time * 1000) + ' ' + log_text],
+						['.log', 'innerText', new Date(log.time * 1000) + ' ' + log_text],
 					]);
 					parent.appendChild(line);
 					if (log.no > last_seen) {
@@ -129,17 +129,17 @@ function monitor_logs (element_id, app_id, device_id) {
 				}
 			}
 			// resize and scroll
-			const bounds = parent.getBoundingClientRect();			
+			const bounds = parent.getBoundingClientRect();
 			parent.style.height = (window.innerHeight - bounds.top - 10) + 'px';
 			// scroll to bottom automatically
 			parent.scrollTop = parent.scrollHeight;
-			setTimeout(update, 100)
+			setTimeout(update, 100);
 		}, (failure) => {
-			setTimeout(update, 1000)
-		})		
-	}
+			setTimeout(update, 1000);
+		});
+	};
 	update();
-	
+
 }
 
 export { update_app_list, update_device_list, monitor_logs };
