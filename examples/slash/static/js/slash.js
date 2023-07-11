@@ -1,7 +1,7 @@
 // connect to demos of the slash log service
 // copyright 2022 Samuel Baird MIT Licence
 
-function _query (method, url, data, successHandler, errorHandler, timeout) {
+function Query (method, url, data, successHandler, errorHandler, timeout) {
 	const xhr = new XMLHttpRequest();
 
 	xhr.open(method, url, true);
@@ -39,15 +39,15 @@ function _query (method, url, data, successHandler, errorHandler, timeout) {
 // public api
 const query = {
 	post: function (url, data, successHandler, errorHandler) {
-		return _query('post', url, data, successHandler, errorHandler, 30000);
+		return Query('post', url, data, successHandler, errorHandler, 30000);
 	},
 	get: function (url, successHandler, errorHandler) {
-		return _query('get', url + '?nocache=' + Date.now(), null, successHandler, errorHandler, 30000);
+		return Query('get', url + '?nocache=' + Date.now(), null, successHandler, errorHandler, 30000);
 	},
 };
 
-function clone_template (element_id, subs) {
-	const element = document.getElementById(element_id);
+function cloneTemplate (elementID, subs) {
+	const element = document.getElementById(elementID);
 	const clone = (element.tagName == 'TEMPLATE') ? element.content.firstElementChild.cloneNode(true) : element.cloneNode(true);
 	clone.id = null;
 	if (Array.isArray(subs)) {
@@ -60,17 +60,17 @@ function clone_template (element_id, subs) {
 	return clone;
 }
 
-function update_app_list (element_id) {
+function updateAppList (elementID) {
 	// this one loads immediately and then on a basic polling timer
-	const parent = document.getElementById(element_id);
+	const parent = document.getElementById(elementID);
 	const update = () => {
-		query.get('api/apps', (json_data) => {
+		query.get('api/apps', (jsonData) => {
 			// create table output
-			if (Array.isArray(json_data)) {
+			if (Array.isArray(jsonData)) {
 				parent.innerHTML = '';
-				for (const app of json_data) {
+				for (const app of jsonData) {
 					const date = new Date(app.time * 1000);
-					const line = clone_template('template_app', [
+					const line = cloneTemplate('template_app', [
 						['.app_id', 'innerText', app.app_id],
 						['.date', 'innerText', date],
 						['a', 'href', 'app.html?app_id=' + app.app_id],
@@ -84,17 +84,17 @@ function update_app_list (element_id) {
 	setInterval(update, 3000);
 }
 
-function update_device_list (element_id, app_id) {
+function updateDeviceList (elementID, app_id) {
 	// this one loads immediately and then on a basic polling timer
-	const parent = document.getElementById(element_id);
+	const parent = document.getElementById(elementID);
 	const update = () => {
-		query.get('api/devices/' + app_id, (json_data) => {
+		query.get('api/devices/' + app_id, (jsonData) => {
 			// create table output
-			if (Array.isArray(json_data)) {
+			if (Array.isArray(jsonData)) {
 				parent.innerHTML = '';
-				for (const device of json_data) {
+				for (const device of jsonData) {
 					const date = new Date(device.time * 1000);
-					const line = clone_template('template_app', [
+					const line = cloneTemplate('template_app', [
 						['.app_id', 'innerText', device.device_id],
 						['.date', 'innerText', date],
 						['a', 'href', 'logs.html?app_id=' + app_id + '&device_id=' + device.device_id],
@@ -108,23 +108,23 @@ function update_device_list (element_id, app_id) {
 	setInterval(update, 3000);
 }
 
-function monitor_logs (element_id, app_id, device_id) {
-	const parent = document.getElementById(element_id);
+function monitorLogs (elementID, app_id, device_id) {
+	const parent = document.getElementById(elementID);
 	parent.innerHTML = '';
 
-	let last_seen = 0;
+	let lastSeen = 0;
 	const update = () => {
-		query.get('api/logs/' + app_id + '/' + device_id + '/' + last_seen, (json_data) => {
-			if (Array.isArray(json_data)) {
-				for (const log of json_data) {
-					const log_text = (typeof log.log_value == 'string') ? log.log_value : JSON.stringify(log.log_value);
+		query.get('api/logs/' + app_id + '/' + device_id + '/' + lastSeen, (jsonData) => {
+			if (Array.isArray(jsonData)) {
+				for (const log of jsonData) {
+					const logText = (typeof log.log_value == 'string') ? log.log_value : JSON.stringify(log.log_value);
 
-					const line = clone_template('template_log', [
-						['.log', 'innerText', new Date(log.time * 1000) + ' ' + log_text],
+					const line = cloneTemplate('template_log', [
+						['.log', 'innerText', new Date(log.time * 1000) + ' ' + logText],
 					]);
 					parent.appendChild(line);
-					if (log.no > last_seen) {
-						last_seen = log.no;
+					if (log.no > lastSeen) {
+						lastSeen = log.no;
 					}
 				}
 			}
@@ -142,4 +142,4 @@ function monitor_logs (element_id, app_id, device_id) {
 
 }
 
-export { update_app_list, update_device_list, monitor_logs };
+export { updateAppList, updateDeviceList, monitorLogs };

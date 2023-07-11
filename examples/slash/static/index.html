@@ -55,7 +55,7 @@ function log(value) {
 	logs.push(value);
 }
 
-function send_logs() {
+function sendLogs() {
 	if (logs.length == 0) {
 		return;
 	}
@@ -72,10 +72,10 @@ function send_logs() {
 
 log('some text');
 log({ object: 'some object' });
-send_logs();
+sendLogs();
 
 log('keep logging more stuff');
-send_logs();
+sendLogs();
 </pre>
 
 <template id="template_app">
@@ -87,7 +87,7 @@ send_logs();
 
 <script type="module">
 	import * as slash from './js/slash.js';
-	slash.update_app_list('app_list');
+	slash.updateAppList('app_list');
 </script>
 
 </body>
