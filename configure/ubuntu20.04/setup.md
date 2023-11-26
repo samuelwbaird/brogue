@@ -1,4 +1,4 @@
-# Ubuntu 22.04
+# Ubuntu 20.04
 
 # External libraries and frameworks
 
@@ -11,7 +11,8 @@
 # Luarocks dependencies
 
 	sudo luarocks install lua-cjson
-	sudo luarocks install lua-cmsgpack
+	# patched version for github issue
+	sudo luarocks install https://raw.githubusercontent.com/FHRNet/lua-cmsgpack/master/rockspec/lua-cmsgpack-scm-1.rockspec
 	sudo luarocks install lsqlite3
 	sudo luarocks install lua-llthreads2
 	sudo luarocks install lzmq
