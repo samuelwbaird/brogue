@@ -24,20 +24,6 @@ _Rascal_ uses a registry to publish APIs across micro server boundaries and reso
 * lua-csmgpack
 * lsqlite3
 
-### llthreads2
-	sudo luarocks install lua-llthreads2
+## Configuration
 
-### lzmq
-	sudo luarocks install lzmq
-
-### lua-cjson
-
-	sudo luarocks install lua-cjson
-
-### lua-cmsgpack
-
-	sudo luarocks install lua-cmsgpack
-
-### lsqlite3
-
-	sudo luarocks install lsqlite3
+See configuration folders for known platforms.
