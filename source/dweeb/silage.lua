@@ -268,7 +268,7 @@ local silage_table = class(function (silage_table)
 		if self._type == 'map' then
 			-- anything goes
 		elseif self._type == 'array' then
-			if name ~= #self._data + 1 then
+			if type(name) ~= 'number' or name < 1 or name > #self._data + 1 then
 				error('silage, cannot treat an array type table as a map', 2)
 			end
 		end
