@@ -100,13 +100,22 @@ local silage_table = class(function (silage_table)
 		rawset(silage.entities, entity_id, self)
 	end
 
-	function silage_table:create(initial_values)
-		return self._silage:wrap(initial_values or {})
+	-- invert_id, allow creation with negative IDs as a user defined marker (eg. to distinguish public/private data)
+	function silage_table:default_invert(invert_id)
+		if type(invert_id) == 'boolean' then
+			return invert_id
+		else
+			return rawget(self, '_id') < 0
+		end
 	end
 
-	function silage_table:array(name)
+	function silage_table:create(initial_values, invert_id)
+		return self._silage:wrap(initial_values or {}, self:default_invert(invert_id))
+	end
+
+	function silage_table:array(name, invert_id)
 		if not name then
-			return self._silage:wrap(create_as_empty_array)
+			return self._silage:wrap(create_as_empty_array, self:default_invert(invert_id))
 		end
 
 		local array = self._data[name]
@@ -115,15 +124,15 @@ local silage_table = class(function (silage_table)
 				error('silage, cannot treat ' .. name .. ' as array', 2)
 			end
 		else
-			array = self._silage:wrap(create_as_empty_array)
+			array = self._silage:wrap(create_as_empty_array, self:default_invert(invert_id))
 			self[name] = array
 		end
 		return array
 	end
 
-	function silage_table:map(name)
+	function silage_table:map(name, invert_id)
 		if not name then
-			return self._silage:wrap({})
+			return self._silage:wrap({}, self:default_invert(invert_id))
 		end
 
 		local map = self._data[name]
@@ -132,7 +141,7 @@ local silage_table = class(function (silage_table)
 				error('silage, cannot treat ' .. name .. ' as map', 2)
 			end
 		else
-			map = self._silage:wrap({})
+			map = self._silage:wrap({}, self:default_invert(invert_id))
 			self[name] = map
 		end
 		return map
@@ -534,8 +543,8 @@ local silage = class(function (silage)
 				end
 				entity = silage_table(self, id, type)
 				inflate_entities[id] = entity
-				if id > self.last_entity_id then
-					self.last_entity_id = id
+				if math.abs(id) > self.last_entity_id then
+					self.last_entity_id = math.abs(id)
 				end
 			end
 			return entity
@@ -615,7 +624,7 @@ local silage = class(function (silage)
 		return true
 	end
 
-	function silage:wrap(value, error_level, cycles_table)
+	function silage:wrap(value, invert_id, error_level, cycles_table)
 		error_level = error_level or 1
 		-- absorb cyclic references here by passing through a translation table
 		if cycles_table and cycles_table[value] then
@@ -632,27 +641,28 @@ local silage = class(function (silage)
 				-- create a new entity with this backing and a new entity id
 				cycles_table = cycles_table or {}
 				local next_entity_id = self.last_entity_id + 1;
+				local use_entity_id = (invert_id and -next_entity_id or next_entity_id)
 				if value == create_as_empty_array or #value > 0 or meta == array then
-					self:persist('array', next_entity_id)
+					self:persist('array', use_entity_id)
 					self.last_entity_id = next_entity_id
-					local entity = silage_table(self, next_entity_id, 'array')
+					local entity = silage_table(self, use_entity_id, 'array')
 					cycles_table[value] = entity
 					-- recursively wrap all entries
 					for i, v in ipairs(value) do
-						entity[i] = self:wrap(v, error_level + 1, cycles_table)
+						entity[i] = self:wrap(v, invert_id, error_level + 1, cycles_table)
 					end
 					return entity
 				else
-					self:persist('map', next_entity_id)
+					self:persist('map', use_entity_id)
 					self.last_entity_id = next_entity_id
-					local entity = silage_table(self, next_entity_id, 'map')
+					local entity = silage_table(self, use_entity_id, 'map')
 					cycles_table[value] = entity
 					-- recursively wrap all the keys and values if we can
 					for k, v in pairs(value) do
 						if type(k) == 'number' and math.floor(k) == k and k >= 1 and k <= #value then
 							-- ignore int value keys already traversed
 						else
-							entity[self:wrap(k, error_level + 1, cycles_table)] = self:wrap(v, error_level + 1, cycles_table)
+							entity[self:wrap(k, invert_id, error_level + 1, cycles_table)] = self:wrap(v, invert_id, error_level + 1, cycles_table)
 						end
 					end
 					return entity
