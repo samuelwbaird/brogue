@@ -69,11 +69,7 @@ return class(function (static)
 		end
 		-- TODO: if self.cache is set then set headers to control cache policy at the browser
 		-- set a default mimetype from the extension if possible
-		local extension = path:match('%.(.+)$')
-		if extension then
-			response:set_mimetype_from_extension(extension:lower())
-		end
-				
+		response:set_mimetype_from_extension(path:match('%.(.+)$'))				
 		return true
 	end
 end)

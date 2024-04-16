@@ -98,9 +98,14 @@ return class(function (response)
 	end
 	
 	function response:set_mimetype_from_extension(extension)
-		local type = response.mimetypes[extension]
-		if type then
-			self:set_header('content-type', type)
+		if extension and response.mimetypes[extension] then
+			self:set_header('content-type', response.mimetypes[extension])
+		else
+			-- check if there is a minimal sub-extension of a compound extension
+			local sub_extension = extension and extension:match('%.([^%.]+)$')
+			if sub_extension and response.mimetypes[sub_extension] then
+				self:set_header('content-type', response.mimetypes[sub_extension])
+			end
 		end
 	end
 	
