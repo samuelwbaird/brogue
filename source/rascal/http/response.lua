@@ -132,6 +132,7 @@ return class(function (response)
 	
 	response.status_code_text = {
 		[200] = 'OK',
+		[204] = 'No Content',
 		[401] = 'Unauthorised',
 		[403] = 'Forbidden',
 		[404] = 'Not Found',
